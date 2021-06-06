@@ -8,6 +8,11 @@ block_height = 40 # block height is universal
 child_indent = 20 # pixels children get indented by
 block_width_min = 200
 
+def pr_collision(r, s, p):
+    x, y = p
+    hx, hy = r
+    return (x > hx and x < (hx + s[0])) and (y > hy and y < (hy + s[1])) # pygame collisionpoint() didn't work
+
 class Block:
     def __init__(self, text, color, pos = (0, 0), children = []):
         self.text = text
@@ -46,17 +51,19 @@ class SlotBlock(Block):
         super().__init__(text, color, pos, children)
         self.num_slots = num_slots
         self.slots = {}
+        self.slot_ps = {}
     def fill_slot(self, block, pos):
-        for slot in range(self.num_slots):
-            if not slot in self.slots:
-                self.slots[slot] = block
-                return True
+        for i, s in self.slot_ps.items():
+            if pr_collision(s[0], s[1], pos):
+                if not i in self.slots:
+                    self.slots[i] = block
+                    return True
         return False
     def update_slots(self):
         new_width = 100 + 50 * self.num_slots
-        for slot in self.slots.items():
+        for i, slot in self.slots.items():
             new_width -= 50
-            new_width += slot[1].width
+            new_width += slot.width
         new_width += 5 * (self.num_slots - 1) # padding
         # must update surface due to width not being static
         if self.width != new_width:
@@ -66,15 +73,19 @@ class SlotBlock(Block):
             self.surface.blit(font.render(self.text, True, (255, 255, 255)), (0, 0))
         width_cur = 0
         for i in range(self.num_slots):
+            self.slot_ps[i] = {}
             if i in self.slots:
                 slot_surf = pygame.Surface((self.slots[i].width, block_height))
-                self.slots[i].pos = (100 + width_cur + 5 * i, 0)
+                self.slot_ps[i][0] = (self.pos[0] + 100 + width_cur + 5 * i, self.pos[1])
+                self.slot_ps[i][1] = (self.slots[i].width, block_height)
                 slot_surf.fill((255, 255, 255))
                 slot_surf.blit(self.slots[i].surface, (0, 0))
                 self.surface.blit(slot_surf, (100 + width_cur + 5 * i, 0))
                 width_cur += self.slots[i].width
             else:
                 slot_surf = pygame.Surface((50, block_height))
+                self.slot_ps[i][0] = (self.pos[0] + 100 + width_cur + 5 * i, self.pos[1])
+                self.slot_ps[i][1] = (50, block_height)
                 slot_surf.fill((255, 255, 255))
                 self.surface.blit(slot_surf, (100 + width_cur + 5 * i, 0))
                 width_cur += 50
@@ -116,13 +127,11 @@ def begin_placing():
 
 # iterative search
 def identify_block(pos):
-    x, y = pos
     for root in block_trees:
         queue = [root]
         while queue:
             head = queue.pop(0)
-            hx, hy = head.pos
-            if (x > hx and x < (hx + head.width)) and (y > hy and y < (hy + block_height)): # pygame collisionpoint() didn't work
+            if pr_collision(head.pos, (head.width, block_height), pos):
                 return head
             queue += head.children
 
@@ -154,10 +163,8 @@ def begin_move():
 
 # recursive search
 def delete_block(pos, blocks):
-    x, y = pos
     for i in range(len(blocks)): # since we want to modify the array we can't do "for x in blocks"
-        hx, hy = blocks[i].pos
-        if (x > hx and x < (hx + blocks[i].width)) and (y > hy and y < (hy + block_height)):
+        if pr_collision(blocks[i].pos, (blocks[i].width, block_height), pos):
             del blocks[i]
             break
         blocks[i].children = delete_block(pos, blocks[i].children[:])
