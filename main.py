@@ -8,11 +8,13 @@ block_height = 40 # block height is universal
 child_indent = 20 # pixels children get indented by
 block_width_min = 200
 
+# determine collision between a point and a rectangle
 def pr_collision(r, s, p):
     x, y = p
     hx, hy = r
     return (x > hx and x < (hx + s[0])) and (y > hy and y < (hy + s[1])) # pygame collisionpoint() didn't work
 
+# base Block class which all types of blocks inherit from
 class Block:
     def __init__(self, text, color, pos = (0, 0), children = []):
         self.text = text
@@ -46,6 +48,7 @@ class Block:
     def execute(self):
         pass
 
+# block type with slot functionality implemented
 class SlotBlock(Block):
     def __init__(self, text, color, num_slots, pos = (0, 0), children = []):
         super().__init__(text, color, pos, children)
@@ -56,6 +59,7 @@ class SlotBlock(Block):
         for i, s in self.slot_ps.items():
             if pr_collision(s[0], s[1], pos):
                 if not i in self.slots:
+                    del block.children
                     self.slots[i] = block
                     return True
         return False
@@ -96,6 +100,7 @@ class SlotBlock(Block):
         for child in self.children:
             child.render()
 
+# StartBlocks get executed first; entry point to game
 class StartBlock(Block):
     def __init__(self, pos = (0, 0), children = []):
         super().__init__("Start", (46, 204, 113), pos, children)
@@ -103,7 +108,8 @@ class StartBlock(Block):
         for child in self.children:
             child.execute()
 
-block_trees = [
+# list of all blocks. blocks are essentially trees of nodes
+block_trees = [ 
     StartBlock((100, 100), [
         SlotBlock("test", (52, 152, 219), 2),
         SlotBlock("test", (52, 152, 219), 3),
