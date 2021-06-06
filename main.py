@@ -59,10 +59,18 @@ class SlotBlock(Block):
         for i, s in self.slot_ps.items():
             if pr_collision(s[0], s[1], pos):
                 if not i in self.slots:
-                    del block.children
+                    block.children = []
                     self.slots[i] = block
                     return True
         return False
+    def get_slot(self, pos):
+        for i, s in self.slot_ps.items():
+            if pr_collision(s[0], s[1], pos):
+                if i in self.slots:
+                    return i
+    def del_slot(self, i):
+        self.slots.pop(i)
+        self.slot_ps.pop(i)
     def update_slots(self):
         new_width = 100 + 50 * self.num_slots
         for i, slot in self.slots.items():
@@ -161,9 +169,19 @@ def end_placing():
 def begin_move():
     global placing, ghost_block, block_trees
     if not placing:
-        ghost_block = identify_block(pygame.mouse.get_pos())
+        pos = pygame.mouse.get_pos()
+        ghost_block = identify_block(pos)
         if ghost_block:
-            delete_block(pygame.mouse.get_pos(), block_trees)
+            if isinstance(ghost_block, SlotBlock):
+                slot_id = ghost_block.get_slot(pos)
+                if slot_id != None: 
+                    slot = ghost_block.slots[slot_id]
+                    ghost_block.del_slot(slot_id)
+                    ghost_block = slot
+                else:
+                    delete_block(pos, block_trees)
+            else:
+                delete_block(pos, block_trees)
             ghost_block.surface.set_alpha(128)
             placing = True
 
