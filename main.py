@@ -189,7 +189,14 @@ def begin_move():
 def delete_block(pos, blocks):
     for i in range(len(blocks)): # since we want to modify the array we can't do "for x in blocks"
         if pr_collision(blocks[i].pos, (blocks[i].width, block_height), pos):
-            del blocks[i]
+            if isinstance(blocks[i], SlotBlock):
+                slot_id = blocks[i].get_slot(pos)
+                if slot_id != None:
+                    blocks[i].del_slot(slot_id)
+                else:
+                    del blocks[i]
+            else:
+                del blocks[i]
             break
         blocks[i].children = delete_block(pos, blocks[i].children[:])
         blocks[i].num_child = len(blocks[i].children)
