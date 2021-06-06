@@ -31,7 +31,7 @@ class Block:
     def count_all_children(self):
         count = self.num_child
         for child in self.children:
-            count += child.count_children()
+            count += child.count_all_children()
         return count
     def render(self):
         self.update_children()
@@ -46,22 +46,41 @@ class SlotBlock(Block):
         super().__init__(text, color, pos, children)
         self.num_slots = num_slots
         self.slots = {}
-    def add_child(self, child):
+    def fill_slot(self, block, pos):
         for slot in range(self.num_slots):
-            if 
-    def render(self):
-        self.update_children()
-        new_width = 100 + 50 * self.num_slots + 5 * (self.num_slots - 1)
+            if not slot in self.slots:
+                self.slots[slot] = block
+                return True
+        return False
+    def update_slots(self):
+        new_width = 100 + 50 * self.num_slots
+        for slot in self.slots.items():
+            new_width -= 50
+            new_width += slot[1].width
+        new_width += 5 * (self.num_slots - 1) # padding
         # must update surface due to width not being static
         if self.width != new_width:
             self.width = new_width
             self.surface = pygame.Surface((self.width, block_height))
             self.surface.fill(self.color)
             self.surface.blit(font.render(self.text, True, (255, 255, 255)), (0, 0))
+        width_cur = 0
         for i in range(self.num_slots):
-            slot_surf = pygame.Surface((50, block_height))
-            slot_surf.fill((255, 255, 255))
-            self.surface.blit(slot_surf, (100 + 55 * i, 0))
+            if i in self.slots:
+                slot_surf = pygame.Surface((self.slots[i].width, block_height))
+                self.slots[i].pos = (100 + width_cur + 5 * i, 0)
+                slot_surf.fill((255, 255, 255))
+                slot_surf.blit(self.slots[i].surface, (0, 0))
+                self.surface.blit(slot_surf, (100 + width_cur + 5 * i, 0))
+                width_cur += self.slots[i].width
+            else:
+                slot_surf = pygame.Surface((50, block_height))
+                slot_surf.fill((255, 255, 255))
+                self.surface.blit(slot_surf, (100 + width_cur + 5 * i, 0))
+                width_cur += 50
+    def render(self):
+        self.update_children()
+        self.update_slots()
         display.blit(self.surface, self.pos)
         for child in self.children:
             child.render()
@@ -111,10 +130,15 @@ def end_placing():
     global placing, ghost_block
     if placing:
         placing = False
-        parent = identify_block(pygame.mouse.get_pos())
+        pos = pygame.mouse.get_pos()
+        parent = identify_block(pos)
         ghost_block.surface.set_alpha(255)
         if parent:
-            parent.add_child(ghost_block)
+            if isinstance(parent, SlotBlock):
+                if not parent.fill_slot(ghost_block, pos):
+                    parent.add_child(ghost_block)
+            else:
+                parent.add_child(ghost_block)
         else:
             block_trees.append(ghost_block)
         del ghost_block
