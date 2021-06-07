@@ -16,6 +16,7 @@ def pr_collision(r, s, p):
 
 # base Block class which all types of blocks inherit from
 class Block:
+    valid_parent = True
     def __init__(self, text, color, pos = (0, 0), children = []):
         self.text = text
         self.color = color
@@ -33,8 +34,9 @@ class Block:
             child.pos = (self.pos[0] + child_indent, self.pos[1] + (block_height + 2) * child_count)
             child_count += child.count_all_children()
     def add_child(self, child):
-        self.children.append(child)
-        self.num_child += 1
+        if self.valid_parent:
+            self.children.append(child)
+            self.num_child += 1
     def count_all_children(self):
         count = self.num_child
         for child in self.children:
@@ -50,11 +52,13 @@ class Block:
 
 # block type with slot functionality implemented
 class SlotBlock(Block):
-    def __init__(self, text, color, num_slots, pos = (0, 0), children = []):
+    valid_parent = True
+    def __init__(self, text, color, num_slots, slots = {}, pos = (0, 0), children = []):
         super().__init__(text, color, pos, children)
         self.num_slots = num_slots
-        self.slots = {}
+        self.slots = slots
         self.slot_ps = {}
+        self.render()
     def fill_slot(self, block, pos):
         for i, s in self.slot_ps.items():
             if pr_collision(s[0], s[1], pos):
@@ -62,15 +66,29 @@ class SlotBlock(Block):
                     block.children = []
                     self.slots[i] = block
                     return True
+                elif isinstance(self.slots[i], SlotBlock):
+                    if self.slots[i].fill_slot(block, pos):
+                        return True
         return False
-    def get_slot(self, pos):
+    def get_slot(self, pos, recurse = False):
         for i, s in self.slot_ps.items():
+            print(s[0])
             if pr_collision(s[0], s[1], pos):
                 if i in self.slots:
-                    return i
-    def del_slot(self, i):
-        self.slots.pop(i)
-        self.slot_ps.pop(i)
+                    if isinstance(self.slots[i], SlotBlock) and recurse:
+                        return self.slots[i].get_slot(pos)
+                    else:
+                        return i
+    def del_slot(self, pos):
+        slot_id = self.get_slot(pos)
+        if slot_id == None:
+            return False
+        elif isinstance(self.slots[slot_id], SlotBlock):
+            return self.slots[slot_id].del_slot(pos)
+        else:
+            self.slots.pop(slot_id)
+            self.slot_ps.pop(slot_id)
+        return True
     def update_slots(self):
         new_width = 100 + 50 * self.num_slots
         for i, slot in self.slots.items():
@@ -93,6 +111,8 @@ class SlotBlock(Block):
                 slot_surf.fill((255, 255, 255))
                 slot_surf.blit(self.slots[i].surface, (0, 0))
                 self.surface.blit(slot_surf, (100 + width_cur + 5 * i, 0))
+                self.slots[i].pos = self.slot_ps[i][0]
+                self.slots[i].render()
                 width_cur += self.slots[i].width
             else:
                 slot_surf = pygame.Surface((50, block_height))
@@ -108,6 +128,24 @@ class SlotBlock(Block):
         for child in self.children:
             child.render()
 
+class FieldBlock(Block):
+    valid_parent = False
+    def __init__(self, text, color, field = "", pos = (0, 0), children = []):
+        super().__init__(text, color, pos, children)
+        self.field = field
+    def render(self):
+        self.update_children()
+        field_surf = pygame.Surface((50, block_height))
+        field_surf.fill((255, 255, 255))
+        text_surf = font.render(self.field, True, (0, 0, 0))
+        field_surf.blit(text_surf, (0, 0))
+        self.surface.blit(field_surf, (100, 0))
+        display.blit(self.surface, self.pos)
+        for child in self.children:
+            child.render()
+    def execute(self):
+        return self.field
+
 # StartBlocks get executed first; entry point to game
 class StartBlock(Block):
     def __init__(self, pos = (0, 0), children = []):
@@ -116,12 +154,19 @@ class StartBlock(Block):
         for child in self.children:
             child.execute()
 
+class AddBlock(SlotBlock):
+    valid_parent = False
+    def __init__(self, slots = {}, pos = (0, 0), children = []):
+        super().__init__("Add", (155, 89, 182), 2, slots, pos, children)
+    def execute(self):
+        val = int(self.slots[0].execute()) + int(self.slots[1].execute())
+        print(val)
+        return val
+
 # list of all blocks. blocks are essentially trees of nodes
 block_trees = [ 
-    StartBlock((100, 100), [
-        SlotBlock("test", (52, 152, 219), 2),
-        SlotBlock("test", (52, 152, 219), 3),
-        SlotBlock("test", (52, 152, 219), 4),
+    StartBlock((100, 100), children = [
+        AddBlock()
     ]),
 ]
 
@@ -135,12 +180,27 @@ ghost_block = None
 def begin_placing():
     global placing, ghost_block
     if not placing:
-        ghost_block = Block("testing", (231, 76, 60))
+        ghost_block = FieldBlock("ok", (0, 0, 0))
         ghost_block.surface.set_alpha(128)
         placing = True
 
+def identify_block(pos, blocks = None):
+    global block_trees
+    if blocks == None:
+        blocks = block_trees
+    for root in blocks:
+        childs = root.children[:]
+        if isinstance(root, SlotBlock):
+            childs += root.slots.values()
+        ret = identify_block(pos, childs)
+        if ret != None:
+            return ret
+        if pr_collision(root.pos, (root.width, block_height), pos):
+            return root
+    return None
+
 # iterative search
-def identify_block(pos):
+def identify_block_bfs(pos):
     for root in block_trees:
         queue = [root]
         while queue:
@@ -148,6 +208,8 @@ def identify_block(pos):
             if pr_collision(head.pos, (head.width, block_height), pos):
                 return head
             queue += head.children
+            if isinstance(head, SlotBlock):
+                queue += head.slots.values()
 
 def end_placing():
     global placing, ghost_block
@@ -172,16 +234,7 @@ def begin_move():
         pos = pygame.mouse.get_pos()
         ghost_block = identify_block(pos)
         if ghost_block:
-            if isinstance(ghost_block, SlotBlock):
-                slot_id = ghost_block.get_slot(pos)
-                if slot_id != None: 
-                    slot = ghost_block.slots[slot_id]
-                    ghost_block.del_slot(slot_id)
-                    ghost_block = slot
-                else:
-                    delete_block(pos, block_trees)
-            else:
-                delete_block(pos, block_trees)
+            delete_block(pos, block_trees)
             ghost_block.surface.set_alpha(128)
             placing = True
 
@@ -190,10 +243,7 @@ def delete_block(pos, blocks):
     for i in range(len(blocks)): # since we want to modify the array we can't do "for x in blocks"
         if pr_collision(blocks[i].pos, (blocks[i].width, block_height), pos):
             if isinstance(blocks[i], SlotBlock):
-                slot_id = blocks[i].get_slot(pos)
-                if slot_id != None:
-                    blocks[i].del_slot(slot_id)
-                else:
+                if not blocks[i].del_slot(pos):
                     del blocks[i]
             else:
                 del blocks[i]
@@ -204,7 +254,7 @@ def delete_block(pos, blocks):
 
 input_map = {
     pygame.K_SPACE: execute_starts,
-    pygame.K_1: begin_placing
+    pygame.K_1: begin_placing,
 }
 
 running = True
