@@ -4,10 +4,7 @@ import graphics
 import blocks
 import utility
 
-global_blocks = [
-    blocks.FieldBlock("field", (100, 100, 100), field = "123"),
-    blocks.FieldBlock("field", (100, 100, 100), field = "77"),
-]
+global_blocks = []
 
 # starts the game, execute all start blocks
 def run_game():
@@ -77,21 +74,41 @@ def delete_block(pos, roots):
 input_map = {
     pygame.K_1: (begin_place, ["StartBlock"]),
     pygame.K_2: (begin_place, ["AddBlock"]),
+    pygame.K_3: (begin_place, ["NumBlock"]),
     pygame.K_SPACE: (run_game, []),
 }
 
 # game loop
+typing = False
+field_block = None
 closed = False
 while not closed:
     for event in pygame.event.get(): # catch any events
         if event.type == pygame.QUIT:
             closed = True
         elif event.type == pygame.KEYDOWN:
-            if event.key in input_map:
+            # TODO: move fieldblock stuff to separate functions
+            if typing:
+                if event.key == pygame.K_RETURN:
+                    typing = False
+                    field_block.validate()
+                    field_block = None
+                elif event.key == pygame.K_BACKSPACE:
+                    field_block.field = field_block.field[:-1]
+                else:
+                    field_block.field += event.unicode
+            elif event.key in input_map:
                 input_map[event.key][0](*input_map[event.key][1])
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1: # LMB
-                (end_place if placing else begin_move)()
+                # TODO: move fieldblock stuff to separate functions
+                pos = pygame.mouse.get_pos()
+                hover = utility.identify_block(pos, global_blocks)
+                if hover and isinstance(hover, blocks.FieldBlock) and utility.check_collision(hover.field_ps[0], hover.field_ps[1], pos) and not typing:
+                    typing = True
+                    field_block = hover
+                elif not typing:
+                    (end_place if placing else begin_move)()
             if event.button == 3: # RMB
                 delete_block(pygame.mouse.get_pos(), global_blocks)
 

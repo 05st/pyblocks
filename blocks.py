@@ -57,9 +57,23 @@ class FieldBlock(BaseBlock):
     def __init__(self, label, color, field = "", opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
         super().__init__(label, color, opacity, size, pos, children)
         self.field = field
+        self.field_ps = None
+
+    def validate(self):
+        pass # to be filled in by inheriting classes
 
     def execute(self): # simply return the text
         return self.field
+
+# FieldBlock which only accepts numbers
+class NumBlock(FieldBlock):
+    def __init__(self, field = "0.0", opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
+        super().__init__("Num", (52, 152, 219), field, opacity, size, pos, children)
+
+    def validate(self):
+        filtered = ''.join(filter(lambda c: c.isdigit() or c == ".", self.field))
+        if not filtered: filtered = "0.0"
+        self.field = str(float(filtered))
 
 # StartBlocks in global_blocks get executed, entry point block
 class StartBlock(BaseBlock):
@@ -78,7 +92,7 @@ class AddBlock(SlotBlock):
         super().__init__("Add", (155, 89, 182), 2, slots, opacity, size, pos, children)
 
     def execute(self):
-        val = int(self.slots[0].execute()) + int(self.slots[1].execute())
+        val = float(self.slots[0].execute()) + float(self.slots[1].execute())
         print(val)
         return val
 

@@ -53,9 +53,11 @@ def render(tasks):
         # handle FieldBlocks
         elif isinstance(block, blocks.FieldBlock):
             field_text_surf = font.render(block.field, True, (0, 0, 0))
-            field_surf = pygame.Surface((field_text_surf.get_rect().width + 10, block.size[1]))
+            field_size = (field_text_surf.get_rect().width + 10, block.size[1])
+            field_surf = pygame.Surface(field_size)
             field_surf.fill((236, 240, 241))#(255, 255, 255))
             field_surf.blit(field_text_surf, (5, block.size[1] // 2 - field_text_surf.get_rect().height // 2))
+            block.field_ps = ((text_surf.get_rect().width + 10 + block.pos[0], block.pos[1]), field_size)
             block_surf.blit(field_surf, (text_surf.get_rect().width + 10, 0))
 
         # blit surfaces
