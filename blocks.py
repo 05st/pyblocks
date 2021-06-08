@@ -6,6 +6,7 @@ DEF_SIZE = (200, 40)
 DEF_POS = (0, 0)
 
 class BaseBlock:
+    default_valid_parent = True
     def __init__(self, label, color, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
         self.label = label
         self.color = color
@@ -13,9 +14,11 @@ class BaseBlock:
         self.size = size
         self.pos = pos
         self.children = children[:]
+        self.valid_parent = self.default_valid_parent
 
     def add_child(self, child):
-        self.children.append(child)
+        if self.valid_parent:
+            self.children.append(child)
 
     def abs_height(self):
         height = self.size[1]
@@ -35,6 +38,7 @@ class SlotBlock(BaseBlock):
             if not i in self.slots:
                 if utility.check_collision(spos, (self.size[1],) * 2, pos):
                     ghost.children = []
+                    ghost.valid_parent = False
                     self.slots[i] = ghost
                     return True
         return False

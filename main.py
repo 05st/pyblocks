@@ -11,7 +11,11 @@ global_blocks = [
         ]),
         blocks.StartBlock(),
     ]),
-    blocks.SlotBlock("test2", (0, 255, 0), 2, slots = {
+    blocks.SlotBlock("test2", (0, 255, 0), 5, slots = {
+        0: blocks.StartBlock(),
+        1: blocks.SlotBlock("test3", (0, 0, 255), 2, slots = {0: blocks.StartBlock()})
+    }),
+    blocks.SlotBlock("test2", (0, 255, 0), 5, slots = {
         0: blocks.StartBlock(),
         1: blocks.SlotBlock("test3", (0, 0, 255), 2, slots = {0: blocks.StartBlock()})
     }),
@@ -22,7 +26,7 @@ ghost = None
 def begin_place(block_type):
     global placing, ghost
     if not placing:
-        ghost = getattr(blocks, block_type)()
+        ghost = getattr(blocks, block_type)(opacity = 128)
         placing = True
 
 def end_place():
@@ -50,6 +54,7 @@ def begin_move():
         if ghost != None:
             delete_block(pos, global_blocks)
             ghost.opacity = 128
+            ghost.valid_parent = ghost.default_valid_parent # incase it's moving out of a slot
             placing = True
 
 # another recursive search, children first; needed to handle BlockSlot separately
