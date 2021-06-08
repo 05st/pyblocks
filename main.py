@@ -5,21 +5,15 @@ import blocks
 import utility
 
 global_blocks = [
-    blocks.BaseBlock("test", (255, 0, 0), pos = (250, 0), children = [
-        blocks.BaseBlock("child", (0, 0, 255), pos = (250, 200), children = [
-            blocks.StartBlock(),
-        ]),
-        blocks.StartBlock(),
-    ]),
-    blocks.SlotBlock("test2", (0, 255, 0), 5, slots = {
-        0: blocks.StartBlock(),
-        1: blocks.SlotBlock("test3", (0, 0, 255), 2, slots = {0: blocks.StartBlock()})
-    }),
-    blocks.SlotBlock("test2", (0, 255, 0), 5, slots = {
-        0: blocks.StartBlock(),
-        1: blocks.SlotBlock("test3", (0, 0, 255), 2, slots = {0: blocks.StartBlock()})
-    }),
+    blocks.FieldBlock("field", (100, 100, 100), field = "123"),
+    blocks.FieldBlock("field", (100, 100, 100), field = "77"),
 ]
+
+# starts the game, execute all start blocks
+def run_game():
+    for root in global_blocks:
+        if isinstance(root, blocks.StartBlock):
+            root.execute()
 
 placing = False
 ghost = None
@@ -82,7 +76,8 @@ def delete_block(pos, roots):
 
 input_map = {
     pygame.K_1: (begin_place, ["StartBlock"]),
-    pygame.K_2: (begin_place, ["StartBlock"]),
+    pygame.K_2: (begin_place, ["AddBlock"]),
+    pygame.K_SPACE: (run_game, []),
 }
 
 # game loop
