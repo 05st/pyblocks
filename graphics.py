@@ -38,8 +38,9 @@ def render(tasks):
                 slot_surf.fill((255, 255, 255))
                 slot_pos = (cur_width + i * 5, 0)
                 block_surf.blit(slot_surf, slot_pos)
+                block.slots_pos[i] = (block.pos[0] + slot_pos[0], block.pos[1] + slot_pos[1])
                 if i in block.slots:
-                    block.slots[i].pos = (block.pos[0] + slot_pos[0], block.pos[1] + slot_pos[1])
+                    block.slots[i].pos = block.slots_pos[i]
                     tasks.append(block.slots[i])
                     cur_width += block.slots[i].size[0]
                 else:

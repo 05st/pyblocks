@@ -34,7 +34,8 @@ def end_place():
         ghost.opacity = 255
         if parent:
             if isinstance(parent, blocks.SlotBlock):
-                parent.fill_slot(ghost, pos)
+                if not parent.fill_slot(ghost, pos):
+                    parent.add_child(ghost)
             else:
                 parent.add_child(ghost)
         else:

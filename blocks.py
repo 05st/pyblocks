@@ -1,5 +1,7 @@
 import copy
 
+import utility
+
 DEF_SIZE = (200, 40)
 DEF_POS = (0, 0)
 
@@ -26,9 +28,16 @@ class SlotBlock(BaseBlock):
         super().__init__(label, color, opacity, size, pos, children)
         self.slots_count = slots_count
         self.slots = copy.deepcopy(slots)
+        self.slots_pos = {}
 
-    def fill_slot(self, ghost, pos):
-        print(self.label)
+    def fill_slot(self, ghost, pos): # rewrite in future if possible
+        for i, spos in self.slots_pos.items():
+            if not i in self.slots:
+                if utility.check_collision(spos, (self.size[1],) * 2, pos):
+                    ghost.children = []
+                    self.slots[i] = ghost
+                    return True
+        return False
 
 class StartBlock(BaseBlock):
     def __init__(self, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
