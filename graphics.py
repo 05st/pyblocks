@@ -2,6 +2,7 @@ import pygame
 import blocks
 
 display = pygame.display.set_mode((1280, 720))
+pygame.display.set_caption("PyBlocks")
 pygame.font.init()
 font = pygame.font.SysFont("Arial", 25)
 
@@ -17,8 +18,11 @@ def render(tasks):
 
         # calculate width
         width = text_surf.get_rect().width + 10
-        if isinstance(block, blocks.SlotBlock):
+        if isinstance(block, blocks.SlotBlock): # account for slots
             width += block.slots_count * block.size[1] + 5 * (block.slots_count - 1)
+            for item in block.slots.values():
+                width -= block.size[1]
+                width += item.size[0]
         block.size = (width, block.size[1])
 
         # create main surface
@@ -28,10 +32,18 @@ def render(tasks):
 
         # handle SlotBlocks
         if isinstance(block, blocks.SlotBlock):
+            cur_width = text_surf.get_rect().width + 10
             for i in range(block.slots_count):
                 slot_surf = pygame.Surface((block.size[1],)*2)
                 slot_surf.fill((255, 255, 255))
-                block_surf.blit(slot_surf, (text_surf.get_rect().width + 10 + i * (block.size[1] + 5), 0))
+                slot_pos = (cur_width + i * 5, 0)
+                block_surf.blit(slot_surf, slot_pos)
+                if i in block.slots:
+                    block.slots[i].pos = (block.pos[0] + slot_pos[0], block.pos[1] + slot_pos[1])
+                    tasks.append(block.slots[i])
+                    cur_width += block.slots[i].size[0]
+                else:
+                    cur_width += block.size[1]
 
         # blit surfaces
         block_surf.blit(text_surf, (5, block.size[1] // 2 - text_surf.get_rect().height // 2))

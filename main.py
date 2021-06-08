@@ -11,7 +11,10 @@ global_blocks = [
         ]),
         blocks.StartBlock(),
     ]),
-    blocks.SlotBlock("test2", (0, 255, 0), 2),
+    blocks.SlotBlock("test2", (0, 255, 0), 2, slots = {
+        0: blocks.StartBlock(),
+        1: blocks.SlotBlock("test3", (0, 0, 255), 2, slots = {0: blocks.StartBlock()})
+    }),
 ]
 
 placing = False
@@ -30,7 +33,10 @@ def end_place():
         parent = utility.identify_block(pos, global_blocks)
         ghost.opacity = 255
         if parent:
-            parent.add_child(ghost)
+            if isinstance(parent, blocks.SlotBlock):
+                parent.fill_slot(ghost, pos)
+            else:
+                parent.add_child(ghost)
         else:
             global_blocks.append(ghost)
         del ghost
@@ -45,13 +51,28 @@ def begin_move():
             ghost.opacity = 128
             placing = True
 
+# another recursive search, children first; needed to handle BlockSlot separately
+def delete_block_slot(pos, slots):
+    for i, slot in slots.items():
+        if isinstance(slot, blocks.SlotBlock):
+            if delete_block_slot(pos, slot.slots):
+                return True
+        if utility.check_collision(slot.pos, slot.size, pos):
+            del slots[i]
+            return True
+    return False
+
 # recursively search for block, similar to identify_block
 def delete_block(pos, roots):
-    for i in range(len(roots)): # since we want to modify the list, we cant do for x in roots
+    for i in range(len(roots)): # since we want to modify the list, we cant do "for x in roots"
+        status = delete_block(pos, roots[i].children)
+        if isinstance(roots[i], blocks.SlotBlock):
+            status = delete_block_slot(pos, roots[i].slots)
+        if status: return True
         if utility.check_collision(roots[i].pos, roots[i].size, pos):
             del roots[i]
-            break
-        delete_block(pos, roots[i].children)
+            return True
+    return False
 
 input_map = {
     pygame.K_1: (begin_place, ["StartBlock"]),

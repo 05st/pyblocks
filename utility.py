@@ -10,7 +10,9 @@ def check_collision(pos, size, point):
 # recursive search, checks children first
 def identify_block(pos, roots):
     for root in roots:
-        children = root.children
+        children = root.children[:]
+        if isinstance(root, blocks.SlotBlock):
+            children += list(root.slots.values())[:]
         ret = identify_block(pos, children)
         if ret != None: return ret
         if check_collision(root.pos, root.size, pos): return root

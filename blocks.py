@@ -27,6 +27,9 @@ class SlotBlock(BaseBlock):
         self.slots_count = slots_count
         self.slots = copy.deepcopy(slots)
 
+    def fill_slot(self, ghost, pos):
+        print(self.label)
+
 class StartBlock(BaseBlock):
     def __init__(self, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
         super().__init__("Start", (46, 204, 113), opacity, size, pos, children)
