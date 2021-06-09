@@ -1,4 +1,5 @@
 import copy
+import math
 
 import utility
 
@@ -65,6 +66,12 @@ class FieldBlock(BaseBlock):
     def execute(self): # simply return the text
         return self.field
 
+# just a child class, no different functionality. 
+# to make it easier for me
+class TextBlock(FieldBlock):
+    def __init__(self, field="", opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
+        super().__init__("Text", (52, 152, 219), field, opacity, size, pos, children)
+
 # FieldBlock which only accepts numbers
 class NumBlock(FieldBlock):
     def __init__(self, field = "0.0", opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
@@ -74,6 +81,9 @@ class NumBlock(FieldBlock):
         filtered = ''.join(filter(lambda c: c.isdigit() or c == ".", self.field))
         if not filtered: filtered = "0.0"
         self.field = str(float(filtered))
+
+    def execute(self):
+        return float(self.field)
 
 # StartBlocks in global_blocks get executed, entry point block
 class StartBlock(BaseBlock):
@@ -95,7 +105,16 @@ class PrintBlock(SlotBlock):
         if 0 in self.slots:
             print(self.slots[0].execute())
 
-# arithmetic blocks, i tried to automatically generate these classes but
+class IfBlock(SlotBlock):
+    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
+        super().__init__("If", (241, 196, 15), 1, slots, opacity, size, pos, children)
+
+    def execute(self):
+        if 0 in self.slots and self.slots[0].execute():
+            for child in self.children:
+                child.execute()
+
+# operator blocks, i tried to automatically generate these classes but
 # there was an issue with closures which i didn't have enough time to fix
 class AddBlock(SlotBlock):
     default_valid_parent = False
@@ -104,7 +123,7 @@ class AddBlock(SlotBlock):
 
     def execute(self):
         try:
-            return float(self.slots[0].execute()) + float(self.slots[1].execute())
+            return self.slots[0].execute() + self.slots[1].execute()
         except:
             pass
 
@@ -115,7 +134,7 @@ class SubBlock(SlotBlock):
 
     def execute(self):
         try:
-            return float(self.slots[0].execute()) - float(self.slots[1].execute())
+            return self.slots[0].execute() - self.slots[1].execute()
         except:
             pass
 
@@ -126,7 +145,7 @@ class MulBlock(SlotBlock):
 
     def execute(self):
         try:
-            return float(self.slots[0].execute()) * float(self.slots[1].execute())
+            return self.slots[0].execute() * self.slots[1].execute()
         except:
             pass
 
@@ -137,7 +156,7 @@ class DivBlock(SlotBlock):
 
     def execute(self):
         try:
-            return float(self.slots[0].execute()) / float(self.slots[1].execute())
+            return self.slots[0].execute() / self.slots[1].execute()
         except:
             pass
 
@@ -149,8 +168,17 @@ class ModBlock(SlotBlock):
     def execute(self):
         try:
             # i had to do all these weird casts so types stayed consistent
-            return float(int(float(self.slots[0].execute())) % int(float(self.slots[1].execute())))
+            return float(int(self.slots[0].execute()) % int(self.slots[1].execute()))
         except:
             pass
 
+class EqBlock(SlotBlock):
+    default_valid_parent = False
+    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
+        super().__init__("=", (155, 89, 182), 2, slots, opacity, size, pos, children)
+
+    def execute(self):
+        if 0 in self.slots and 1 in self.slots:
+            a, b = self.slots[0].execute(), self.slots[1].execute()
+            return math.isclose(a, b) if isinstance(a, float) and isinstance(b, float) else a == b
 

@@ -20,6 +20,10 @@ def insert_menu(btn_datas):
 
     ps = []
 
+    # center in window
+    ww, wh = pygame.display.get_surface().get_size()
+    spos = (ww // 2 - 300, wh // 2 - 300)
+
     cur_width = 0
     for i, btn_data in enumerate(btn_datas):
         btn_text = font.render(btn_data[0], True, (255, 255, 255))
@@ -31,9 +35,9 @@ def insert_menu(btn_datas):
         surface.blit(btn_surf, pos)
         btn_rect = btn_surf.get_rect()
         cur_width += btn_rect.width
-        ps.append(((pos[0] + 340, pos[1] + 60), (btn_rect.width, btn_rect.height)))
+        ps.append(((pos[0] + spos[0], pos[1] + spos[1]), (btn_rect.width, btn_rect.height)))
 
-    display.blit(surface, (340, 60))
+    display.blit(surface, spos)
 
     return ps
 

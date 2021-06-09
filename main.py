@@ -99,7 +99,7 @@ input_map = {
 }
 
 # probably not the best place to organize these lists
-insert_options = ["StartBlock", "NumBlock", "PrintBlock", "AddBlock", "SubBlock", "MulBlock", "DivBlock", "ModBlock"]
+insert_options = ["StartBlock", "NumBlock", "TextBlock", "PrintBlock", "AddBlock", "SubBlock", "MulBlock", "DivBlock", "ModBlock", "IfBlock", "EqBlock"]
 temp_instances = [getattr(blocks, block_class)() for block_class in insert_options]
 insert_buttons = [(block.label, block.color) for block in temp_instances]
 insert_menu_ps = []
