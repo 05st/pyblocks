@@ -6,9 +6,39 @@ pygame.display.set_caption("PyBlocks")
 pygame.font.init()
 font = pygame.font.SysFont("Arial", 25)
 
+def prepare():
+    display.fill((0, 0, 0)) # black background
+
+def finish():
+    pygame.display.update() # update display
+
+# returns list of pos and sizes for btns so main module can handle click detection
+# takes in list of tuples for button data
+def insert_menu(btn_datas):
+    surface = pygame.Surface((600, 600))
+    surface.fill((236, 240, 241))
+
+    ps = []
+
+    cur_width = 0
+    for i, btn_data in enumerate(btn_datas):
+        btn_text = font.render(btn_data[0], True, (255, 255, 255))
+        text_rect = btn_text.get_rect()
+        btn_surf = pygame.Surface((text_rect.width + 10, text_rect.height + 20))
+        btn_surf.fill(btn_data[1])
+        btn_surf.blit(btn_text, (5, 10))
+        pos = (i * 5 + cur_width, 0)
+        surface.blit(btn_surf, pos)
+        btn_rect = btn_surf.get_rect()
+        cur_width += btn_rect.width
+        ps.append(((pos[0] + 340, pos[1] + 60), (btn_rect.width, btn_rect.height)))
+
+    display.blit(surface, (340, 60))
+
+    return ps
+
 # to be called once per frame
 def render(tasks):
-    display.fill((0, 0, 0)) # black background
 
     while tasks: # while tasks is not empty
         block = tasks.pop()
@@ -72,5 +102,4 @@ def render(tasks):
         
         tasks += block.children[:]
 
-    pygame.display.update() # update display
 

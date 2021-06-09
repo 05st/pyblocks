@@ -1,4 +1,5 @@
 import pygame
+import copy
 
 import graphics
 import blocks
@@ -6,47 +7,47 @@ import utility
 
 global_blocks = []
 
+typing = False
+closed = False
+placing = False
+
 # starts the game, execute all start blocks
 def run_game():
     for root in global_blocks:
         if isinstance(root, blocks.StartBlock):
             root.execute()
 
-placing = False
 ghost = None
 def begin_place(block_type):
     global placing, ghost
     if not placing:
-        ghost = getattr(blocks, block_type)(opacity = 128)
+        ghost = getattr(blocks, block_type)()
+        ghost.opacity = 128
         placing = True
 
-def end_place():
+def end_place(ident, pos):
     global placing, ghost, global_blocks
     if placing:
         placing = False
-        pos = pygame.mouse.get_pos()
-        parent = utility.identify_block(pos, global_blocks)
         ghost.opacity = 255
-        if parent:
-            if isinstance(parent, blocks.SlotBlock):
-                if not parent.fill_slot(ghost, pos):
-                    parent.add_child(ghost)
+        if ident:
+            if isinstance(ident, blocks.SlotBlock):
+                if not ident.fill_slot(ghost, pos):
+                    ident.add_child(ghost)
             else:
-                parent.add_child(ghost)
+                ident.add_child(ghost)
         else:
             global_blocks.append(ghost)
         del ghost
 
-def begin_move():
+def begin_move(ident, pos):
     global placing, ghost, global_blocks
-    if not placing:
-        pos = pygame.mouse.get_pos()
-        ghost = utility.identify_block(pos, global_blocks)
-        if ghost != None:
-            delete_block(pos, global_blocks)
-            ghost.opacity = 128
-            ghost.valid_parent = ghost.default_valid_parent # incase it's moving out of a slot
-            placing = True
+    if not placing and ident:
+        ghost = ident
+        delete_block(pos, global_blocks)
+        ghost.opacity = 128
+        ghost.valid_parent = ghost.default_valid_parent # incase it's moving out of a slot
+        placing = True
 
 # another recursive search, children first; needed to handle BlockSlot separately
 def delete_block_slot(pos, slots):
@@ -71,17 +72,40 @@ def delete_block(pos, roots):
             return True
     return False
 
+insert_menu = False
+def toggle_insert():
+    global insert_menu
+    insert_menu = not insert_menu
+
+def begin_typing(ident, pos):
+    global typing, field_block
+    if ident and isinstance(ident, blocks.FieldBlock) and utility.check_collision(ident.field_ps[0], ident.field_ps[1], pos):
+        typing = True
+        field_block = ident
+ 
+# using a dictionary allows me to not use a thousand elif statements
+# (not that i needed to in the first place)
 input_map = {
     pygame.K_1: (begin_place, ["StartBlock"]),
-    pygame.K_2: (begin_place, ["AddBlock"]),
-    pygame.K_3: (begin_place, ["NumBlock"]),
-    pygame.K_SPACE: (run_game, []),
+    pygame.K_2: (begin_place, ["NumBlock"]),
+    pygame.K_3: (begin_place, ["PrintBlock"]),
+    pygame.K_4: (begin_place, ["AddBlock"]),
+    pygame.K_5: (begin_place, ["SubBlock"]),
+    pygame.K_6: (begin_place, ["MulBlock"]),
+    pygame.K_7: (begin_place, ["DivBlock"]),
+    pygame.K_8: (begin_place, ["ModBlock"]),
+    pygame.K_SPACE: (toggle_insert, []),
+    pygame.K_RETURN: (run_game, []),
 }
 
+# probably not the best place to organize these lists
+insert_options = ["StartBlock", "NumBlock", "PrintBlock", "AddBlock", "SubBlock", "MulBlock", "DivBlock", "ModBlock"]
+temp_instances = [getattr(blocks, block_class)() for block_class in insert_options]
+insert_buttons = [(block.label, block.color) for block in temp_instances]
+insert_menu_ps = []
+
 # game loop
-typing = False
 field_block = None
-closed = False
 while not closed:
     for event in pygame.event.get(): # catch any events
         if event.type == pygame.QUIT:
@@ -89,6 +113,7 @@ while not closed:
         elif event.type == pygame.KEYDOWN:
             # TODO: move fieldblock stuff to separate functions
             if typing:
+                # i had to implement my own text input, since pygame didn't support
                 if event.key == pygame.K_RETURN:
                     typing = False
                     field_block.validate()
@@ -99,18 +124,21 @@ while not closed:
                     field_block.field += event.unicode
             elif event.key in input_map:
                 input_map[event.key][0](*input_map[event.key][1])
-        elif event.type == pygame.MOUSEBUTTONUP:
+        elif event.type == pygame.MOUSEBUTTONDOWN and not typing: # any mouse inputs should be ignored if typing
+            pos = pygame.mouse.get_pos()
             if event.button == 1: # LMB
-                # TODO: move fieldblock stuff to separate functions
-                pos = pygame.mouse.get_pos()
-                hover = utility.identify_block(pos, global_blocks)
-                if hover and isinstance(hover, blocks.FieldBlock) and utility.check_collision(hover.field_ps[0], hover.field_ps[1], pos) and not typing:
-                    typing = True
-                    field_block = hover
-                elif not typing:
-                    (end_place if placing else begin_move)()
-            if event.button == 3: # RMB
-                delete_block(pygame.mouse.get_pos(), global_blocks)
+                if insert_menu: # if insert menu is open, check if any buttons were clicked
+                    for i, btn_ps in enumerate(insert_menu_ps):
+                        if utility.check_collision(btn_ps[0], btn_ps[1], pos):
+                            insert_menu = False
+                            begin_place(insert_options[i])
+                else:
+                    ident = utility.identify_block(pos, global_blocks)
+                    begin_typing(ident, pos) # will try to begin typing
+                    if not typing: # if not interacting with a FieldBlock
+                        (end_place if placing else begin_move)(ident, pos)
+            if event.button == 3 and not insert_menu: # RMB
+                delete_block(pos, global_blocks)
 
     tasks = global_blocks[:] # to send to renderer
     # update ghost
@@ -119,7 +147,11 @@ while not closed:
         ghost.pos = (mx - ghost.size[0] // 2, my - ghost.size[1] // 2)
         tasks.append(ghost)
 
+    graphics.prepare()
     graphics.render(tasks)
+    if insert_menu:
+        insert_menu_ps = graphics.insert_menu(insert_buttons)
+    graphics.finish()
 
 pygame.quit()
 

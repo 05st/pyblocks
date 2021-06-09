@@ -85,14 +85,72 @@ class StartBlock(BaseBlock):
         for child in self.children:
             child.execute()
 
-# AddBlocks add two numbers
+# PrintBlocks just print the result of the first slot
+class PrintBlock(SlotBlock):
+    default_valid_parent = False
+    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
+        super().__init__("Print", (52, 73, 94), 1, slots, opacity, size, pos, children)
+
+    def execute(self):
+        if 0 in self.slots:
+            print(self.slots[0].execute())
+
+# arithmetic blocks, i tried to automatically generate these classes but
+# there was an issue with closures which i didn't have enough time to fix
 class AddBlock(SlotBlock):
     default_valid_parent = False
     def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("Add", (155, 89, 182), 2, slots, opacity, size, pos, children)
+        super().__init__("+", (155, 89, 182), 2, slots, opacity, size, pos, children)
 
     def execute(self):
-        val = float(self.slots[0].execute()) + float(self.slots[1].execute())
-        print(val)
-        return val
+        try:
+            return float(self.slots[0].execute()) + float(self.slots[1].execute())
+        except:
+            pass
+
+class SubBlock(SlotBlock):
+    default_valid_parent = False
+    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
+        super().__init__("-", (155, 89, 182), 2, slots, opacity, size, pos, children)
+
+    def execute(self):
+        try:
+            return float(self.slots[0].execute()) - float(self.slots[1].execute())
+        except:
+            pass
+
+class MulBlock(SlotBlock):
+    default_valid_parent = False
+    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
+        super().__init__("x", (155, 89, 182), 2, slots, opacity, size, pos, children)
+
+    def execute(self):
+        try:
+            return float(self.slots[0].execute()) * float(self.slots[1].execute())
+        except:
+            pass
+
+class DivBlock(SlotBlock):
+    default_valid_parent = False
+    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
+        super().__init__("/", (155, 89, 182), 2, slots, opacity, size, pos, children)
+
+    def execute(self):
+        try:
+            return float(self.slots[0].execute()) / float(self.slots[1].execute())
+        except:
+            pass
+
+class ModBlock(SlotBlock):
+    default_valid_parent = False
+    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
+        super().__init__("%", (155, 89, 182), 2, slots, opacity, size, pos, children)
+
+    def execute(self):
+        try:
+            # i had to do all these weird casts so types stayed consistent
+            return float(int(float(self.slots[0].execute())) % int(float(self.slots[1].execute())))
+        except:
+            pass
+
 
