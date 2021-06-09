@@ -86,20 +86,28 @@ def begin_typing(ident, pos):
 # using a dictionary allows me to not use a thousand elif statements
 # (not that i needed to in the first place)
 input_map = {
-    pygame.K_1: (begin_place, ["StartBlock"]),
-    pygame.K_2: (begin_place, ["NumBlock"]),
-    pygame.K_3: (begin_place, ["PrintBlock"]),
-    pygame.K_4: (begin_place, ["AddBlock"]),
-    pygame.K_5: (begin_place, ["SubBlock"]),
-    pygame.K_6: (begin_place, ["MulBlock"]),
-    pygame.K_7: (begin_place, ["DivBlock"]),
-    pygame.K_8: (begin_place, ["ModBlock"]),
-    pygame.K_SPACE: (toggle_insert, []),
+    # pygame.K_1: (begin_place, ["StartBlock"]),
+    # pygame.K_2: (begin_place, ["NumBlock"]),
+    # pygame.K_3: (begin_place, ["PrintBlock"]),
+    # pygame.K_4: (begin_place, ["AddBlock"]),
+    # pygame.K_5: (begin_place, ["SubBlock"]),
+    # pygame.K_6: (begin_place, ["MulBlock"]),
+    # pygame.K_7: (begin_place, ["DivBlock"]),
+    # pygame.K_8: (begin_place, ["ModBlock"]),
+    # pygame.K_SPACE: (toggle_insert, []),
     pygame.K_RETURN: (run_game, []),
 }
 
 # probably not the best place to organize these lists
-insert_options = ["StartBlock", "NumBlock", "TextBlock", "PrintBlock", "AddBlock", "SubBlock", "MulBlock", "DivBlock", "ModBlock", "IfBlock", "EqBlock"]
+insert_options = [
+    "StartBlock",
+    "NumBlock", "TextBlock",
+    "PrintBlock",
+    "AddBlock", "SubBlock", "MulBlock", "DivBlock", "ModBlock",
+    "EqBlock", "GrBlock", "LsBlock",
+    "VarBlock", "SetBlock",
+    "IfBlock", "WhileBlock"
+]
 temp_instances = [getattr(blocks, block_class)() for block_class in insert_options]
 insert_buttons = [(block.label, block.color) for block in temp_instances]
 insert_menu_ps = []

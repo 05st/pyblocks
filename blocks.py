@@ -6,6 +6,9 @@ import utility
 DEF_SIZE = (200, 40)
 DEF_POS = (0, 0)
 
+# dictionary for variables
+global_vars = {}
+
 # BaseBlock is the root class, has children functionality
 class BaseBlock:
     default_valid_parent = True
@@ -114,12 +117,45 @@ class IfBlock(SlotBlock):
             for child in self.children:
                 child.execute()
 
+class WhileBlock(SlotBlock):
+    def __init__(self, slots = {}, children = []):
+        super().__init__("While", (241, 196, 15), 1, slots, 255, DEF_SIZE, DEF_POS, [])
+
+    def execute(self):
+        if 0 in self.slots:
+            while self.slots[0].execute():
+                for child in self.children:
+                    child.execute()
+
+class VarBlock(FieldBlock):
+    default_valid_parent = False
+    def __init__(self, field="a", opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
+        super().__init__("Var", (192, 57, 43), field, opacity, size, pos, children)
+
+    def validate(self):
+        if not self.field:
+            self.field = "a"
+
+    def execute(self):
+        if self.field in global_vars:
+            return global_vars[self.field]
+
+class SetBlock(SlotBlock):
+    default_valid_parent = False
+    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
+        super().__init__("Set", (231, 76, 60), 2, slots, opacity, size, pos, children)
+
+    def execute(self):
+        if 0 in self.slots and 1 in self.slots:
+            if isinstance(self.slots[0], VarBlock):
+                global_vars[self.slots[0].field] = self.slots[1].execute()
+
 # operator blocks, i tried to automatically generate these classes but
 # there was an issue with closures which i didn't have enough time to fix
 class AddBlock(SlotBlock):
     default_valid_parent = False
-    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("+", (155, 89, 182), 2, slots, opacity, size, pos, children)
+    def __init__(self, slots = {}):
+        super().__init__("+", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
 
     def execute(self):
         try:
@@ -129,8 +165,8 @@ class AddBlock(SlotBlock):
 
 class SubBlock(SlotBlock):
     default_valid_parent = False
-    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("-", (155, 89, 182), 2, slots, opacity, size, pos, children)
+    def __init__(self, slots = {}):
+        super().__init__("-", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
 
     def execute(self):
         try:
@@ -140,8 +176,8 @@ class SubBlock(SlotBlock):
 
 class MulBlock(SlotBlock):
     default_valid_parent = False
-    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("x", (155, 89, 182), 2, slots, opacity, size, pos, children)
+    def __init__(self, slots = {}):
+        super().__init__("x", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
 
     def execute(self):
         try:
@@ -151,8 +187,8 @@ class MulBlock(SlotBlock):
 
 class DivBlock(SlotBlock):
     default_valid_parent = False
-    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("/", (155, 89, 182), 2, slots, opacity, size, pos, children)
+    def __init__(self, slots = {}):
+        super().__init__("/", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
 
     def execute(self):
         try:
@@ -162,8 +198,8 @@ class DivBlock(SlotBlock):
 
 class ModBlock(SlotBlock):
     default_valid_parent = False
-    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("%", (155, 89, 182), 2, slots, opacity, size, pos, children)
+    def __init__(self, slots = {}):
+        super().__init__("%", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
 
     def execute(self):
         try:
@@ -174,11 +210,33 @@ class ModBlock(SlotBlock):
 
 class EqBlock(SlotBlock):
     default_valid_parent = False
-    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("=", (155, 89, 182), 2, slots, opacity, size, pos, children)
+    def __init__(self, slots = {}):
+        super().__init__("=", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
 
     def execute(self):
         if 0 in self.slots and 1 in self.slots:
             a, b = self.slots[0].execute(), self.slots[1].execute()
             return math.isclose(a, b) if isinstance(a, float) and isinstance(b, float) else a == b
+
+class GrBlock(SlotBlock):
+    default_valid_parent = False
+    def __init__(self, slots = {}):
+        super().__init__(">", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
+
+    def execute(self):
+        if 0 in self.slots and 1 in self.slots:
+            a, b = self.slots[0].execute(), self.slots[1].execute()
+            if isinstance(a, float) and isinstance(b, float):
+                return a > b
+
+class LsBlock(SlotBlock):
+    default_valid_parent = False
+    def __init__(self, slots = {}):
+        super().__init__("<", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
+
+    def execute(self):
+        if 0 in self.slots and 1 in self.slots:
+            a, b = self.slots[0].execute(), self.slots[1].execute()
+            if isinstance(a, float) and isinstance(b, float):
+                return a < b
 
