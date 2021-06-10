@@ -94,7 +94,7 @@ input_map = {
     # pygame.K_6: (begin_place, ["MulBlock"]),
     # pygame.K_7: (begin_place, ["DivBlock"]),
     # pygame.K_8: (begin_place, ["ModBlock"]),
-    # pygame.K_SPACE: (toggle_insert, []),
+    pygame.K_SPACE: (toggle_insert, []),
     pygame.K_RETURN: (run_game, []),
 }
 

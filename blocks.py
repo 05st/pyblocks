@@ -72,7 +72,7 @@ class FieldBlock(BaseBlock):
 # just a child class, no different functionality. 
 # to make it easier for me
 class TextBlock(FieldBlock):
-    def __init__(self, field="", opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
+    def __init__(self, field="text", opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
         super().__init__("Text", (52, 152, 219), field, opacity, size, pos, children)
 
 # FieldBlock which only accepts numbers

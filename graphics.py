@@ -24,17 +24,25 @@ def insert_menu(btn_datas):
     ww, wh = pygame.display.get_surface().get_size()
     spos = (ww // 2 - 300, wh // 2 - 300)
 
-    cur_width = 0
-    for i, btn_data in enumerate(btn_datas):
+    cur_width = 5
+    cur_height = 5
+    for btn_data in btn_datas:
         btn_text = font.render(btn_data[0], True, (255, 255, 255))
         text_rect = btn_text.get_rect()
-        btn_surf = pygame.Surface((text_rect.width + 10, text_rect.height + 20))
+        btn_surf = pygame.Surface((text_rect.width + 10, 40))
+
+        # wrapping container functionality
+        if cur_width + text_rect.width + 10 > 600:
+            cur_width = 5
+            cur_height += 45
+
         btn_surf.fill(btn_data[1])
         btn_surf.blit(btn_text, (5, 10))
-        pos = (i * 5 + cur_width, 0)
+        pos = (cur_width, cur_height)
         surface.blit(btn_surf, pos)
         btn_rect = btn_surf.get_rect()
-        cur_width += btn_rect.width
+
+        cur_width += btn_rect.width + 5
         ps.append(((pos[0] + spos[0], pos[1] + spos[1]), (btn_rect.width, btn_rect.height)))
 
     display.blit(surface, spos)
