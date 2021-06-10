@@ -8,6 +8,8 @@ DEF_POS = (0, 0)
 
 # dictionary for variables
 global_vars = {}
+# functions
+global_fns = {}
 
 # BaseBlock is the root class, has children functionality
 class BaseBlock:
@@ -45,14 +47,13 @@ class SlotBlock(BaseBlock):
         self.slots_pos = {}
 
     def fill_slot(self, ghost, pos): # rewrite in future if possible
-        if ghost.valid_child: # possibly use a different variable, like valid_item
-            for i, spos in self.slots_pos.items():
-                if not i in self.slots:
-                    if utility.check_collision(spos, (self.size[1],) * 2, pos):
-                        ghost.children = []
-                        ghost.valid_parent = False
-                        self.slots[i] = ghost
-                        return True
+        if not ghost.valid_child: return False
+        for i, spos in self.slots_pos.items():
+            if i not in self.slots and utility.check_collision(spos, (self.size[1],) * 2, pos):
+                ghost.children = []
+                ghost.valid_parent = False
+                self.slots[i] = ghost
+                return True
         return False
 
 # FieldBlocks contain a text field for input
@@ -88,6 +89,22 @@ class NumBlock(FieldBlock):
     def execute(self):
         return float(self.field)
 
+class TrueBlock(BaseBlock):
+    default_valid_parent = False
+    def __init__(self):
+        super().__init__("True", (41, 128, 185), 255, DEF_SIZE, DEF_POS, [])
+
+    def execute(self):
+        return True
+
+class FalseBlock(BaseBlock):
+    default_valid_parent = False
+    def __init__(self):
+        super().__init__("False", (41, 128, 185), 255, DEF_SIZE, DEF_POS, [])
+
+    def execute(self):
+        return False
+
 # StartBlocks in global_blocks get executed, entry point block
 class StartBlock(BaseBlock):
     default_valid_child = False
@@ -107,6 +124,50 @@ class PrintBlock(SlotBlock):
     def execute(self):
         if 0 in self.slots:
             print(self.slots[0].execute())
+
+class FuncBlock(FieldBlock):
+    default_valid_parent = True
+    default_valid_child = False
+    def __init__(self, field = "func", children = []):
+        super().__init__("Function", (230, 126, 34), field, 255, DEF_SIZE, DEF_POS, [])
+        global_fns[field] = self
+        self.prev_field = field
+
+    def __del__(self):
+        if self.field in global_fns:
+            global_fns.pop(self.field)
+
+    def validate(self):
+        if not self.field:
+            self.field = "func"
+        global_fns.pop(self.prev_field)
+        global_fns[self.field] = self
+        self.prev_field = self.field
+
+    def execute(self):
+        for child in self.children:
+            r = child.execute()
+            if isinstance(child, RetBlock): return r
+
+class CallBlock(FieldBlock):
+    def __init__(self, field = "func"):
+        super().__init__("Call", (211, 84, 0), field, 255, DEF_SIZE, DEF_POS, [])
+
+    def validate(self):
+        if not self.field:
+            self.field = "func"
+
+    def execute(self):
+        if self.field in global_fns:
+            return global_fns[self.field].execute()
+
+class RetBlock(SlotBlock):
+    def __init__(self, slots = {}):
+        super().__init__("Return", (52, 73, 94), 1, slots, 255, DEF_SIZE, DEF_POS, [])
+
+    def execute(self):
+        if 0 in self.slots:
+            return self.slots[0].execute()
 
 class IfBlock(SlotBlock):
     def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
@@ -128,7 +189,6 @@ class WhileBlock(SlotBlock):
                     child.execute()
 
 class VarBlock(FieldBlock):
-    default_valid_parent = False
     def __init__(self, field="a", opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
         super().__init__("Var", (192, 57, 43), field, opacity, size, pos, children)
 
@@ -150,93 +210,36 @@ class SetBlock(SlotBlock):
             if isinstance(self.slots[0], VarBlock):
                 global_vars[self.slots[0].field] = self.slots[1].execute()
 
-# operator blocks, i tried to automatically generate these classes but
-# there was an issue with closures which i didn't have enough time to fix
-class AddBlock(SlotBlock):
+# binary operator class for more code reusability
+class OpBlock(SlotBlock):
     default_valid_parent = False
-    def __init__(self, slots = {}):
-        super().__init__("+", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
+    def __init__(self, label, oper):
+        super().__init__(label, (155, 89, 182), 2, {}, 255, DEF_SIZE, DEF_POS, [])
+        self.oper = oper
 
     def execute(self):
         try:
-            return self.slots[0].execute() + self.slots[1].execute()
-        except:
-            pass
+            return self.oper(self.slots[0].execute(), self.slots[1].execute())
+        except: pass
 
-class SubBlock(SlotBlock):
+AddBlock = lambda: OpBlock("+", lambda a, b: a + b)
+SubBlock = lambda: OpBlock("-", lambda a, b: a - b)
+MulBlock = lambda: OpBlock("*", lambda a, b: a * b)
+DivBlock = lambda: OpBlock("/", lambda a, b: a / b)
+ModBlock = lambda: OpBlock("%", lambda a, b: float(int(a) / int(b)))
+EqBlock = lambda: OpBlock("=", lambda a, b: math.isclose(a, b) if isinstance(a, float) and isinstance(b, float) else a == b)
+NEqBlock = lambda: OpBlock("!=", lambda a, b: (not math.isclose(a, b)) if isinstance(a, float) and isinstance(b, float) else a != b)
+GrBlock = lambda: OpBlock(">", lambda a, b: a > b)
+LsBlock = lambda: OpBlock("<", lambda a, b: a < b)
+
+# had to implement this separately since it's unary
+class NotBlock(SlotBlock):
     default_valid_parent = False
     def __init__(self, slots = {}):
-        super().__init__("-", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
+        super().__init__("!", (155, 89, 182), 1, slots, 255, DEF_SIZE, DEF_POS, [])
 
     def execute(self):
-        try:
-            return self.slots[0].execute() - self.slots[1].execute()
-        except:
-            pass
-
-class MulBlock(SlotBlock):
-    default_valid_parent = False
-    def __init__(self, slots = {}):
-        super().__init__("x", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
-
-    def execute(self):
-        try:
-            return self.slots[0].execute() * self.slots[1].execute()
-        except:
-            pass
-
-class DivBlock(SlotBlock):
-    default_valid_parent = False
-    def __init__(self, slots = {}):
-        super().__init__("/", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
-
-    def execute(self):
-        try:
-            return self.slots[0].execute() / self.slots[1].execute()
-        except:
-            pass
-
-class ModBlock(SlotBlock):
-    default_valid_parent = False
-    def __init__(self, slots = {}):
-        super().__init__("%", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
-
-    def execute(self):
-        try:
-            # i had to do all these weird casts so types stayed consistent
-            return float(int(self.slots[0].execute()) % int(self.slots[1].execute()))
-        except:
-            pass
-
-class EqBlock(SlotBlock):
-    default_valid_parent = False
-    def __init__(self, slots = {}):
-        super().__init__("=", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
-
-    def execute(self):
-        if 0 in self.slots and 1 in self.slots:
-            a, b = self.slots[0].execute(), self.slots[1].execute()
-            return math.isclose(a, b) if isinstance(a, float) and isinstance(b, float) else a == b
-
-class GrBlock(SlotBlock):
-    default_valid_parent = False
-    def __init__(self, slots = {}):
-        super().__init__(">", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
-
-    def execute(self):
-        if 0 in self.slots and 1 in self.slots:
-            a, b = self.slots[0].execute(), self.slots[1].execute()
-            if isinstance(a, float) and isinstance(b, float):
-                return a > b
-
-class LsBlock(SlotBlock):
-    default_valid_parent = False
-    def __init__(self, slots = {}):
-        super().__init__("<", (155, 89, 182), 2, slots, 255, DEF_SIZE, DEF_POS, [])
-
-    def execute(self):
-        if 0 in self.slots and 1 in self.slots:
-            a, b = self.slots[0].execute(), self.slots[1].execute()
-            if isinstance(a, float) and isinstance(b, float):
-                return a < b
+        if 0 in self.slots:
+            val = self.slots[0].execute()
+            if isinstance(val, bool): return not val
 

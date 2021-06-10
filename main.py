@@ -101,11 +101,12 @@ input_map = {
 # probably not the best place to organize these lists
 insert_options = [
     "StartBlock",
-    "NumBlock", "TextBlock",
-    "PrintBlock",
+    "NumBlock", "TextBlock", "TrueBlock", "FalseBlock",
+    "PrintBlock", "RetBlock",
     "AddBlock", "SubBlock", "MulBlock", "DivBlock", "ModBlock",
-    "EqBlock", "GrBlock", "LsBlock",
+    "EqBlock", "NEqBlock", "NotBlock", "GrBlock", "LsBlock",
     "VarBlock", "SetBlock",
+    "FuncBlock", "CallBlock",
     "IfBlock", "WhileBlock"
 ]
 temp_instances = [getattr(blocks, block_class)() for block_class in insert_options]
@@ -131,7 +132,7 @@ while not closed:
                 else:
                     field_block.field += event.unicode
             elif event.key in input_map:
-                input_map[event.key][0](*input_map[event.key][1])
+                input_map[event.key][0](*input_map[event.key][1]) # calls the function associated with the key code
         elif event.type == pygame.MOUSEBUTTONDOWN and not typing: # any mouse inputs should be ignored if typing
             pos = pygame.mouse.get_pos()
             if event.button == 1: # LMB
