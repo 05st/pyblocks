@@ -1,66 +1,50 @@
 import pygame
+
 import blocks
+import utility
 
 display = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("PyBlocks")
 pygame.font.init()
 font = pygame.font.SysFont(pygame.font.get_default_font(), 25)
 
-def prepare():
-    display.fill((0, 0, 0)) # black background
-
-def finish():
-    pygame.display.update() # update display
-
-def display_problem(problem_data):
-    pass
-
-def display_vars(global_vars):
-    count = 0
-    for label, val in global_vars.items():
-        surf = font.render(f"{label}: {str(val)}", True, (255, 255, 255))
-        display.blit(surf, (0, count * 25))
-        count += 1
-
-# didn't want to implement text wrapping for a single use
-tutorial_text = [
-    "PyBlocks is a game where the objective is to solve certain problems",
-    "with interactive code.",
-    "",
-    "To view the current problem, press TAB. Solutions are verified by",
-    "checking if value stored inside the 'goal' variable is correct.",
-    "",
-    "'Start' blocks are the entry point to the code, they are the first",
-    "blocks executed.",
-    "There are blocks for values, like 'Num' or 'Text' where you provide",
-    "input, or blocks like 'True' and 'False'.",
-    "Some blocks have slots, like operators. The 'Add' block has 2 slots",
-    "for example.",
-    "",
-    "To define and assign variables, use the 'Set' block. It has 2 slots,",
-    "the first slot is for a 'Var' block (the variable you want to set)",
-    "and the second slot is for any value to set the variable to.",
-    "Once set, run the code by pressing ENTER and the value should appear",
-    "on the top right. (Make sure Variable Display is toggled!)",
-    "",
-    "To call a 'Function' block, use the 'Call' block with the name of the",
-    "function in the field.",
-    "",
-    "Press T to toggle this tutorial. Press C to view all of the controls.",
-    "Press SPACE to begin inserting blocks!",
-]
-def display_tutorial():
-    surface = pygame.Surface((600, 600))
+# DIALOG CODE #
+# create_dialog for reusability
+def create_dialog(lines, size = (600, 600)):
+    surface = pygame.Surface(size)
     surface.fill((236, 240, 241))
-
     ww, wh = pygame.display.get_surface().get_size()
-    pos = (ww // 2 - 300, wh // 2 - 300)
-
-    for i, line in enumerate(tutorial_text):
-        text = font.render(line, True, (0, 0, 0))
+    pos = (ww // 2 - size[0] // 2, wh // 2 - size[1] // 2)
+    for i, elem in enumerate(lines):
+        text = font.render(elem, True, (0, 0, 0))
         surface.blit(text, (5, 5 + i * 25))
-
     display.blit(surface, pos)
+
+# i prefer using lambda when the function would only be 2 lines
+display_problem = lambda problem_data: create_dialog(utility.wrap_text(problem_data[0]))
+    
+tutorial_text = """
+    PyBlocks is a game where the objective is to solve certain problems with interactive code. [BREAK]
+    To view the current problem, press TAB. Solutions are verified by checking if value stored inside the 'goal' variable is correct.
+    [BREAK] [BREAK]
+    Clicking on top of a block when placing adds it as a child. [BREAK]
+    Code that you want to run at the start should be placed under 'Start' blocks. They are the entry point; first blocks executed.
+    Only 'Start', 'If', 'While', and 'Function' blocks can have children.
+    [BREAK] [BREAK]
+    There are blocks for values, like 'Num' or 'Text' where you provide input, or blocks like 'True' and 'False'.
+    Some blocks have slots, like operators. The 'Add' block has 2 slots for example. 'Print' block prints to the console window.
+    [BREAK] [BREAK]
+    To define and assign variables, use the 'Set' block.
+    It has 2 slots, the first slot is for a 'Var' block (the variable you want to set) and the second slot is for any value to set the variable to.
+    Once set, run the code by pressing ENTER and the value should appear on the top right. (Make sure Variable Display is toggled!)
+    [BREAK] [BREAK]
+    To call a 'Function' block, use the 'Call' block with the name of the function in the field.
+    [BREAK] [BREAK]
+    Press T to toggle this tutorial. Press C to view all of the controls.
+    [BREAK]
+    Press SPACE to begin inserting blocks!
+"""
+display_tutorial = lambda: create_dialog(utility.wrap_text(tutorial_text), (600, 648))
 
 controls_elems = [
     "LMB: Move/Place/Interact", "RMB: Delete",
@@ -72,18 +56,14 @@ controls_elems = [
     "SPACE: Insert Menu",
     "ENTER: Run Code",
 ]
-def display_controls():
-    surface = pygame.Surface((600, 600))
-    surface.fill((236, 240, 241))
+display_controls = lambda: create_dialog(controls_elems)
 
-    ww, wh = pygame.display.get_surface().get_size()
-    pos = (ww // 2 - 300, wh // 2 - 300)
-
-    for i, elem in enumerate(controls_elems):
-        text = font.render(elem, True, (0, 0, 0))
-        surface.blit(text, (5, 5 + i * 25))
-    
-    display.blit(surface, pos)
+def display_vars(global_vars):
+    count = 0
+    for label, val in global_vars.items():
+        surf = font.render(f"{label}: {str(val)}", True, (255, 255, 255))
+        display.blit(surf, (0, count * 25))
+        count += 1
 
 # returns list of pos and sizes for btns so main module can handle click detection
 # takes in list of tuples for button data
@@ -121,6 +101,12 @@ def display_insert_menu(btn_datas):
     display.blit(surface, spos)
 
     return ps
+
+def prepare():
+    display.fill((0, 0, 0)) # black background
+
+def finish():
+    pygame.display.update() # update display
 
 # to be called once per frame
 def render(tasks):

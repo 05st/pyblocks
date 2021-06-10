@@ -9,13 +9,14 @@ import utility
 
 # GLOBAL VARIABLES #
 global_blocks = []
+current_level = 1
 
 # state variables
 typing = False
 closed = False
 placing = False
 
-# INPUT FUNCTIONS #
+# INPUT VARIABLES AND FUNCTIONS #
 # (re)starts the game, execute all start blocks
 def run_game():
     blocks.global_vars = {}
@@ -90,6 +91,7 @@ def begin_typing(ident, pos):
         typing = True
         field_block = ident
 
+# UI VARIABLES AND FUNCTIONS #
 # using a single and function makes implementing UI easier
 toggleables = {
     "d_menu": False,
@@ -101,16 +103,6 @@ def toggle(x):
     global toggleables
     if x in toggleables:
         toggleables[x] = not toggleables[x]
-
-# using a dictionary allows me to not use a thousand elif statements
-input_map = {
-    pygame.K_x: (clear, []),
-    pygame.K_v: (toggle, ["d_vars"]),
-    pygame.K_c: (toggle, ["d_cont"]),
-    pygame.K_t: (toggle, ["d_tutr"]),
-    pygame.K_SPACE: (toggle, ["d_menu"]),
-    pygame.K_RETURN: (run_game, []),
-}
 
 # this list contains the blocks that will be available on the insert menu
 insert_options = [
@@ -126,6 +118,16 @@ insert_options = [
 temp_instances = [getattr(blocks, block_class)() for block_class in insert_options]
 insert_buttons = [(block.label, block.color) for block in temp_instances]
 insert_menu_ps = [] # contains position and size of insert menu buttons for click detection
+
+# using a dictionary allows me to not use a thousand elif statements
+input_map = {
+    pygame.K_x: (clear, []),
+    pygame.K_v: (toggle, ["d_vars"]),
+    pygame.K_c: (toggle, ["d_cont"]),
+    pygame.K_t: (toggle, ["d_tutr"]),
+    pygame.K_SPACE: (toggle, ["d_menu"]),
+    pygame.K_RETURN: (run_game, []),
+}
 
 # GAME LOOP #
 field_block = None
