@@ -55,6 +55,9 @@ controls_elems = [
     "T: Show Tutorial",
     "SPACE: Insert Menu",
     "ENTER: Run Code",
+    "TAB: View Problem",
+    "LEFT ARROW: Previous Level",
+    "RIGHT ARROW: Next Level",
 ]
 display_controls = lambda: create_dialog(controls_elems)
 

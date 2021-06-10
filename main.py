@@ -41,6 +41,11 @@ def run_game():
         if blocks.global_vars["goal"] == levels[current_level-1][1]:
             current_level = min(current_level + 1, len(levels))
 
+def inc_level(n):
+    global current_level
+    current_level += n
+    current_level = min(len(levels), max(1, current_level))
+
 # clears the workspace
 def clear():
     global global_blocks
@@ -145,6 +150,8 @@ input_map = {
     pygame.K_TAB: (toggle, ["d_prob"]),
     pygame.K_SPACE: (toggle, ["d_menu"]),
     pygame.K_RETURN: (run_game, []),
+    pygame.K_LEFT: (inc_level, [-1]),
+    pygame.K_RIGHT: (inc_level, [1]),
 }
 
 # GAME LOOP #
