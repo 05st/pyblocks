@@ -21,7 +21,7 @@ def create_dialog(lines, size = (600, 600)):
     display.blit(surface, pos)
 
 # i prefer using lambda when the function would only be 2 lines
-display_problem = lambda problem_data: create_dialog(utility.wrap_text(problem_data[0]))
+display_problem = lambda problem_text: create_dialog(utility.wrap_text(problem_text), (600, 100))
     
 tutorial_text = """
     PyBlocks is a game where the objective is to solve certain problems with interactive code. [BREAK]

@@ -222,9 +222,9 @@ class OpBlock(SlotBlock):
 
 AddBlock = lambda: OpBlock("+", lambda a, b: a + b)
 SubBlock = lambda: OpBlock("-", lambda a, b: a - b)
-MulBlock = lambda: OpBlock("*", lambda a, b: a * b)
+MulBlock = lambda: OpBlock("x", lambda a, b: a * b)
 DivBlock = lambda: OpBlock("/", lambda a, b: a / b)
-ModBlock = lambda: OpBlock("%", lambda a, b: float(int(a) / int(b)))
+ModBlock = lambda: OpBlock("%", lambda a, b: float(int(a) % int(b)))
 EqBlock = lambda: OpBlock("=", lambda a, b: math.isclose(a, b) if isinstance(a, float) and isinstance(b, float) else a == b)
 NEqBlock = lambda: OpBlock("!=", lambda a, b: (not math.isclose(a, b)) if isinstance(a, float) and isinstance(b, float) else a != b)
 GrBlock = lambda: OpBlock(">", lambda a, b: a > b)
