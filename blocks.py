@@ -3,9 +3,6 @@ import math
 
 import utility
 
-DEF_SIZE = (200, 40)
-DEF_POS = (0, 0)
-
 # dictionary for variables
 global_vars = {}
 # functions
@@ -15,12 +12,12 @@ global_fns = {}
 class BaseBlock:
     default_valid_parent = True
     default_valid_child = True
-    def __init__(self, label, color, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
+    def __init__(self, label, color, children = []):
         self.label = label
         self.color = color
-        self.opacity = opacity
-        self.size = size
-        self.pos = pos
+        self.opacity = 255
+        self.size = (200, 40) # will get filled in first iteration of rendering
+        self.pos = (0, 0) # same here
         self.children = children[:]
         self.valid_parent = self.default_valid_parent
         self.valid_child = self.default_valid_child
@@ -40,8 +37,8 @@ class BaseBlock:
 
 # SlotBlock class implements slot functionality into BaseBlcok
 class SlotBlock(BaseBlock):
-    def __init__(self, label, color, slots_count, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__(label, color, opacity, size, pos, children)
+    def __init__(self, label, color, slots_count, slots = {}, children = []):
+        super().__init__(label, color, children)
         self.slots_count = slots_count
         self.slots = copy.deepcopy(slots)
         self.slots_pos = {}
@@ -59,8 +56,8 @@ class SlotBlock(BaseBlock):
 # FieldBlocks contain a text field for input
 class FieldBlock(BaseBlock):
     default_valid_parent = False
-    def __init__(self, label, color, field = "", opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__(label, color, opacity, size, pos, children)
+    def __init__(self, label, color, field = "", children = []):
+        super().__init__(label, color, children)
         self.field = field
         self.field_ps = None
 
@@ -73,13 +70,13 @@ class FieldBlock(BaseBlock):
 # just a child class, no different functionality. 
 # to make it easier for me
 class TextBlock(FieldBlock):
-    def __init__(self, field="text", opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("Text", (52, 152, 219), field, opacity, size, pos, children)
+    def __init__(self, field="text"):
+        super().__init__("Text", (52, 152, 219), field, [])
 
 # FieldBlock which only accepts numbers
 class NumBlock(FieldBlock):
-    def __init__(self, field = "0.0", opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("Num", (52, 152, 219), field, opacity, size, pos, children)
+    def __init__(self, field = "0.0"):
+        super().__init__("Num", (52, 152, 219), field, [])
 
     def validate(self):
         filtered = ''.join(filter(lambda c: c.isdigit() or c == ".", self.field))
@@ -89,10 +86,11 @@ class NumBlock(FieldBlock):
     def execute(self):
         return float(self.field)
 
+# blocks for boolean values
 class TrueBlock(BaseBlock):
     default_valid_parent = False
     def __init__(self):
-        super().__init__("True", (41, 128, 185), 255, DEF_SIZE, DEF_POS, [])
+        super().__init__("True", (41, 128, 185), [])
 
     def execute(self):
         return True
@@ -100,7 +98,7 @@ class TrueBlock(BaseBlock):
 class FalseBlock(BaseBlock):
     default_valid_parent = False
     def __init__(self):
-        super().__init__("False", (41, 128, 185), 255, DEF_SIZE, DEF_POS, [])
+        super().__init__("False", (41, 128, 185), [])
 
     def execute(self):
         return False
@@ -108,8 +106,8 @@ class FalseBlock(BaseBlock):
 # StartBlocks in global_blocks get executed, entry point block
 class StartBlock(BaseBlock):
     default_valid_child = False
-    def __init__(self, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("Start", (46, 204, 113), opacity, size, pos, children)
+    def __init__(self, children = []):
+        super().__init__("Start", (46, 204, 113), children)
 
     def execute(self): # execute all children
         for child in self.children:
@@ -118,8 +116,8 @@ class StartBlock(BaseBlock):
 # PrintBlocks just print the result of the first slot
 class PrintBlock(SlotBlock):
     default_valid_parent = False
-    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("Print", (52, 73, 94), 1, slots, opacity, size, pos, children)
+    def __init__(self, slots = {}):
+        super().__init__("Print", (52, 73, 94), 1, slots, [])
 
     def execute(self):
         if 0 in self.slots:
@@ -129,7 +127,7 @@ class FuncBlock(FieldBlock):
     default_valid_parent = True
     default_valid_child = False
     def __init__(self, field = "func", children = []):
-        super().__init__("Function", (230, 126, 34), field, 255, DEF_SIZE, DEF_POS, [])
+        super().__init__("Function", (230, 126, 34), field, children)
         global_fns[field] = self
         self.prev_field = field
 
@@ -151,7 +149,7 @@ class FuncBlock(FieldBlock):
 
 class CallBlock(FieldBlock):
     def __init__(self, field = "func"):
-        super().__init__("Call", (211, 84, 0), field, 255, DEF_SIZE, DEF_POS, [])
+        super().__init__("Call", (211, 84, 0), field, [])
 
     def validate(self):
         if not self.field:
@@ -163,15 +161,15 @@ class CallBlock(FieldBlock):
 
 class RetBlock(SlotBlock):
     def __init__(self, slots = {}):
-        super().__init__("Return", (52, 73, 94), 1, slots, 255, DEF_SIZE, DEF_POS, [])
+        super().__init__("Return", (52, 73, 94), 1, slots, [])
 
     def execute(self):
         if 0 in self.slots:
             return self.slots[0].execute()
 
 class IfBlock(SlotBlock):
-    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("If", (241, 196, 15), 1, slots, opacity, size, pos, children)
+    def __init__(self, slots = {}, children = []):
+        super().__init__("If", (241, 196, 15), 1, slots, children)
 
     def execute(self):
         if 0 in self.slots and self.slots[0].execute():
@@ -180,7 +178,7 @@ class IfBlock(SlotBlock):
 
 class WhileBlock(SlotBlock):
     def __init__(self, slots = {}, children = []):
-        super().__init__("While", (241, 196, 15), 1, slots, 255, DEF_SIZE, DEF_POS, [])
+        super().__init__("While", (241, 196, 15), 1, slots, children)
 
     def execute(self):
         if 0 in self.slots:
@@ -189,8 +187,8 @@ class WhileBlock(SlotBlock):
                     child.execute()
 
 class VarBlock(FieldBlock):
-    def __init__(self, field="a", opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("Var", (192, 57, 43), field, opacity, size, pos, children)
+    def __init__(self, field="a"):
+        super().__init__("Var", (192, 57, 43), field, [])
 
     def validate(self):
         if not self.field:
@@ -202,8 +200,8 @@ class VarBlock(FieldBlock):
 
 class SetBlock(SlotBlock):
     default_valid_parent = False
-    def __init__(self, slots = {}, opacity = 255, size = DEF_SIZE, pos = DEF_POS, children = []):
-        super().__init__("Set", (231, 76, 60), 2, slots, opacity, size, pos, children)
+    def __init__(self, slots = {}):
+        super().__init__("Set", (231, 76, 60), 2, slots, [])
 
     def execute(self):
         if 0 in self.slots and 1 in self.slots:
@@ -214,7 +212,7 @@ class SetBlock(SlotBlock):
 class OpBlock(SlotBlock):
     default_valid_parent = False
     def __init__(self, label, oper):
-        super().__init__(label, (155, 89, 182), 2, {}, 255, DEF_SIZE, DEF_POS, [])
+        super().__init__(label, (155, 89, 182), 2, {}, [])
         self.oper = oper
 
     def execute(self):
@@ -236,7 +234,7 @@ LsBlock = lambda: OpBlock("<", lambda a, b: a < b)
 class NotBlock(SlotBlock):
     default_valid_parent = False
     def __init__(self, slots = {}):
-        super().__init__("!", (155, 89, 182), 1, slots, 255, DEF_SIZE, DEF_POS, [])
+        super().__init__("!", (155, 89, 182), 1, slots, [])
 
     def execute(self):
         if 0 in self.slots:

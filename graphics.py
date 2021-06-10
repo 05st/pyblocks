@@ -19,6 +19,25 @@ def display_vars(global_vars):
         display.blit(surf, (0, count * 25))
         count += 1
 
+controls_elems = [
+    "LMB: Interact", "RMB: Delete",
+    "X: Clear",
+    "V: Toggle Variable Display", "C: Toggle Controls Display", "SPACE: Toggle Insert Menu",
+    "ENTER: Run Code",
+]
+def display_controls():
+    surface = pygame.Surface((600, 600))
+    surface.fill((236, 240, 241))
+
+    ww, wh = pygame.display.get_surface().get_size()
+    pos = (ww // 2 - 300, wh // 2 - 300)
+
+    for i, elem in enumerate(controls_elems):
+        text = font.render(elem, True, (0, 0, 0))
+        surface.blit(text, (5, 5 + i * 25))
+    
+    display.blit(surface, pos)
+
 # returns list of pos and sizes for btns so main module can handle click detection
 # takes in list of tuples for button data
 def insert_menu(btn_datas):
@@ -66,7 +85,7 @@ def render(tasks):
         text_surf = font.render(block.label, True, (255, 255, 255))
 
         # calculate width
-        # REDO: move handling from below up here
+        # TODO: move handling from below up here
         width = text_surf.get_rect().width + 10
         if isinstance(block, blocks.SlotBlock): # account for slots
             width += block.slots_count * block.size[1] + 5 * (block.slots_count - 1)

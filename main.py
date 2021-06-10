@@ -1,25 +1,33 @@
+# LIBRARY IMPORTS #
 import pygame
 import copy
-import os
 
+# LOCAL MODULES #
 import graphics
 import blocks
 import utility
 
+# GLOBAL VARIABLES #
 global_blocks = []
 
+# state variables
 typing = False
 closed = False
 placing = False
 
-# starts the game, execute all start blocks
+# INPUT FUNCTIONS #
+# (re)starts the game, execute all start blocks
 def run_game():
-    print("\n[PyBlocks Output]")
     blocks.global_vars = {}
     blocks.global_fns = {}
     for root in global_blocks:
         if isinstance(root, blocks.StartBlock):
             root.execute()
+
+# clears the workspace
+def clear():
+    global global_blocks
+    global_blocks = []
 
 ghost = None
 def begin_place(block_type):
@@ -76,31 +84,33 @@ def delete_block(pos, roots):
             return True
     return False
 
-insert_menu = False
-def toggle_insert():
-    global insert_menu
-    insert_menu = not insert_menu
-
-display_vars = True
-def toggle_vars():
-    global display_vars
-    display_vars = not display_vars
-
 def begin_typing(ident, pos):
     global typing, field_block
     if ident and isinstance(ident, blocks.FieldBlock) and utility.check_collision(ident.field_ps[0], ident.field_ps[1], pos):
         typing = True
         field_block = ident
- 
+
+# using a single and function makes implementing UI easier
+toggleables = {
+    "d_menu": False,
+    "d_vars": True,
+    "d_cont": False,
+}
+def toggle(x):
+    global toggleables
+    if x in toggleables:
+        toggleables[x] = not toggleables[x]
+
 # using a dictionary allows me to not use a thousand elif statements
-# (not that i needed to in the first place)
 input_map = {
-    pygame.K_v: (toggle_vars, []),
-    pygame.K_SPACE: (toggle_insert, []),
+    pygame.K_x: (clear, []),
+    pygame.K_v: (toggle, ["d_vars"]),
+    pygame.K_c: (toggle, ["d_cont"]),
+    pygame.K_SPACE: (toggle, ["d_menu"]),
     pygame.K_RETURN: (run_game, []),
 }
 
-# probably not the best place to organize these lists
+# this list contains the blocks that will be available on the insert menu
 insert_options = [
     "StartBlock",
     "NumBlock", "TextBlock", "TrueBlock", "FalseBlock",
@@ -108,14 +118,14 @@ insert_options = [
     "AddBlock", "SubBlock", "MulBlock", "DivBlock", "ModBlock",
     "EqBlock", "NEqBlock", "NotBlock", "GrBlock", "LsBlock",
     "VarBlock", "SetBlock",
-    "FuncBlock", "CallBlock",
+    # "FuncBlock", "CallBlock",
     "IfBlock", "WhileBlock"
 ]
 temp_instances = [getattr(blocks, block_class)() for block_class in insert_options]
 insert_buttons = [(block.label, block.color) for block in temp_instances]
-insert_menu_ps = []
+insert_menu_ps = [] # contains position and size of insert menu buttons for click detection
 
-# game loop
+# GAME LOOP #
 field_block = None
 while not closed:
     for event in pygame.event.get(): # catch any events
@@ -138,10 +148,10 @@ while not closed:
         elif event.type == pygame.MOUSEBUTTONDOWN and not typing: # any mouse inputs should be ignored if typing
             pos = pygame.mouse.get_pos()
             if event.button == 1: # LMB
-                if insert_menu: # if insert menu is open, check if any buttons were clicked
+                if toggleables["d_menu"]: # if insert menu is open, check if any buttons were clicked
                     for i, btn_ps in enumerate(insert_menu_ps):
                         if utility.check_collision(btn_ps[0], btn_ps[1], pos):
-                            insert_menu = False
+                            toggleables["d_menu"] = False
                             begin_place(insert_options[i])
                 else:
                     ident = utility.identify_block(pos, global_blocks)
@@ -153,7 +163,7 @@ while not closed:
                         begin_typing(ident, pos) # will try to begin typing
                         if not typing: # if not interacting with a FieldBlock
                             (end_place if placing else begin_move)(ident, pos)
-            if event.button == 3 and not insert_menu: # RMB
+            if event.button == 3 and not toggleables["d_menu"]: # RMB
                 delete_block(pos, global_blocks)
 
     tasks = global_blocks[:] # to send to renderer
@@ -163,11 +173,14 @@ while not closed:
         ghost.pos = (mx - ghost.size[0] // 2, my - ghost.size[1] // 2)
         tasks.append(ghost)
 
-    graphics.prepare()
-    graphics.render(tasks)
-    if insert_menu: insert_menu_ps = graphics.insert_menu(insert_buttons)
-    if display_vars: graphics.display_vars(blocks.global_vars)
-    graphics.finish()
+    # render everything
+    graphics.prepare() # clears screen
+    graphics.render(tasks) # renders blocks
+    # render toggleables
+    if toggleables["d_vars"]: graphics.display_vars(blocks.global_vars)
+    if toggleables["d_menu"]: insert_menu_ps = graphics.insert_menu(insert_buttons)
+    if toggleables["d_cont"]: graphics.display_controls()
+    graphics.finish() # update display
 
-pygame.quit()
+pygame.quit() # properly clean up
 
