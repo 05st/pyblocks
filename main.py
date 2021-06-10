@@ -1,5 +1,6 @@
 import pygame
 import copy
+import os
 
 import graphics
 import blocks
@@ -13,6 +14,9 @@ placing = False
 
 # starts the game, execute all start blocks
 def run_game():
+    print("\n[PyBlocks Output]")
+    blocks.global_vars = {}
+    blocks.global_fns = {}
     for root in global_blocks:
         if isinstance(root, blocks.StartBlock):
             root.execute()
@@ -77,6 +81,11 @@ def toggle_insert():
     global insert_menu
     insert_menu = not insert_menu
 
+display_vars = True
+def toggle_vars():
+    global display_vars
+    display_vars = not display_vars
+
 def begin_typing(ident, pos):
     global typing, field_block
     if ident and isinstance(ident, blocks.FieldBlock) and utility.check_collision(ident.field_ps[0], ident.field_ps[1], pos):
@@ -86,14 +95,7 @@ def begin_typing(ident, pos):
 # using a dictionary allows me to not use a thousand elif statements
 # (not that i needed to in the first place)
 input_map = {
-    # pygame.K_1: (begin_place, ["StartBlock"]),
-    # pygame.K_2: (begin_place, ["NumBlock"]),
-    # pygame.K_3: (begin_place, ["PrintBlock"]),
-    # pygame.K_4: (begin_place, ["AddBlock"]),
-    # pygame.K_5: (begin_place, ["SubBlock"]),
-    # pygame.K_6: (begin_place, ["MulBlock"]),
-    # pygame.K_7: (begin_place, ["DivBlock"]),
-    # pygame.K_8: (begin_place, ["ModBlock"]),
+    pygame.K_v: (toggle_vars, []),
     pygame.K_SPACE: (toggle_insert, []),
     pygame.K_RETURN: (run_game, []),
 }
@@ -163,8 +165,8 @@ while not closed:
 
     graphics.prepare()
     graphics.render(tasks)
-    if insert_menu:
-        insert_menu_ps = graphics.insert_menu(insert_buttons)
+    if insert_menu: insert_menu_ps = graphics.insert_menu(insert_buttons)
+    if display_vars: graphics.display_vars(blocks.global_vars)
     graphics.finish()
 
 pygame.quit()

@@ -12,6 +12,13 @@ def prepare():
 def finish():
     pygame.display.update() # update display
 
+def display_vars(global_vars):
+    count = 0
+    for label, val in global_vars.items():
+        surf = font.render(f"{label}: {str(val)}", True, (255, 255, 255))
+        display.blit(surf, (0, count * 25))
+        count += 1
+
 # returns list of pos and sizes for btns so main module can handle click detection
 # takes in list of tuples for button data
 def insert_menu(btn_datas):
