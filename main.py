@@ -143,9 +143,14 @@ while not closed:
                             begin_place(insert_options[i])
                 else:
                     ident = utility.identify_block(pos, global_blocks)
-                    begin_typing(ident, pos) # will try to begin typing
-                    if not typing: # if not interacting with a FieldBlock
-                        (end_place if placing else begin_move)(ident, pos)
+                    if pygame.key.get_pressed()[pygame.K_LSHIFT] and ident and not placing: # cloning block feature TODO: move to own function
+                        ghost = copy.deepcopy(ident)
+                        ghost.opacity = 128
+                        placing = True
+                    else:
+                        begin_typing(ident, pos) # will try to begin typing
+                        if not typing: # if not interacting with a FieldBlock
+                            (end_place if placing else begin_move)(ident, pos)
             if event.button == 3 and not insert_menu: # RMB
                 delete_block(pos, global_blocks)
 
