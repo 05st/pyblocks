@@ -95,6 +95,7 @@ toggleables = {
     "d_menu": False,
     "d_vars": True,
     "d_cont": False,
+    "d_tutr": True,
 }
 def toggle(x):
     global toggleables
@@ -106,6 +107,7 @@ input_map = {
     pygame.K_x: (clear, []),
     pygame.K_v: (toggle, ["d_vars"]),
     pygame.K_c: (toggle, ["d_cont"]),
+    pygame.K_t: (toggle, ["d_tutr"]),
     pygame.K_SPACE: (toggle, ["d_menu"]),
     pygame.K_RETURN: (run_game, []),
 }
@@ -178,8 +180,9 @@ while not closed:
     graphics.render(tasks) # renders blocks
     # render toggleables
     if toggleables["d_vars"]: graphics.display_vars(blocks.global_vars)
-    if toggleables["d_menu"]: insert_menu_ps = graphics.insert_menu(insert_buttons)
+    if toggleables["d_menu"]: insert_menu_ps = graphics.display_insert_menu(insert_buttons)
     if toggleables["d_cont"]: graphics.display_controls()
+    if toggleables["d_tutr"]: graphics.display_tutorial()
     graphics.finish() # update display
 
 pygame.quit() # properly clean up
