@@ -16,7 +16,7 @@ class BaseBlock:
         self.label = label
         self.color = color
         self.opacity = 255
-        self.size = (200, 40) # will get filled in first iteration of rendering
+        self.size = (200, 30) # will get filled in first iteration of rendering
         self.pos = (0, 0) # same here
         self.children = children[:]
         self.valid_parent = self.default_valid_parent
@@ -26,8 +26,9 @@ class BaseBlock:
         if self.valid_parent and child.valid_child:
             self.children.append(child)
 
+    # accounts for the 2px border
     def abs_height(self):
-        height = self.size[1]
+        height = self.size[1] + 4
         for child in self.children:
             height += child.abs_height()
         return height
@@ -186,6 +187,19 @@ class WhileBlock(SlotBlock):
                 for child in self.children:
                     child.execute()
 
+class ForBlock(SlotBlock):
+    def __init__(self, slots = {}, children = []):
+        super().__init__("For", (241, 196, 15), 3, slots, children)
+
+    def execute(self):
+        try:
+            self.slots[0].execute()
+            while self.slots[1].execute():
+                for child in self.children:
+                    child.execute()
+                self.slots[2].execute()
+        except: pass
+
 class VarBlock(FieldBlock):
     def __init__(self, field="a"):
         super().__init__("Var", (192, 57, 43), field, [])
@@ -209,7 +223,7 @@ class SetBlock(SlotBlock):
                 global_vars[self.slots[0].field] = self.slots[1].execute()
 
 # binary operator class for more code reusability
-class OpBlock(SlotBlock):
+class BOpBlock(SlotBlock):
     default_valid_parent = False
     def __init__(self, label, oper):
         super().__init__(label, (155, 89, 182), 2, {}, [])
@@ -220,24 +234,52 @@ class OpBlock(SlotBlock):
             return self.oper(self.slots[0].execute(), self.slots[1].execute())
         except: pass
 
-AddBlock = lambda: OpBlock("+", lambda a, b: a + b)
-SubBlock = lambda: OpBlock("-", lambda a, b: a - b)
-MulBlock = lambda: OpBlock("x", lambda a, b: a * b)
-DivBlock = lambda: OpBlock("/", lambda a, b: a / b)
-ModBlock = lambda: OpBlock("%", lambda a, b: float(int(a) % int(b)))
-EqBlock = lambda: OpBlock("=", lambda a, b: math.isclose(a, b) if isinstance(a, float) and isinstance(b, float) else a == b)
-NEqBlock = lambda: OpBlock("!=", lambda a, b: (not math.isclose(a, b)) if isinstance(a, float) and isinstance(b, float) else a != b)
-GrBlock = lambda: OpBlock(">", lambda a, b: a > b)
-LsBlock = lambda: OpBlock("<", lambda a, b: a < b)
+AddBlock = lambda: BOpBlock("+", lambda a, b: a + b)
+SubBlock = lambda: BOpBlock("-", lambda a, b: a - b)
+MulBlock = lambda: BOpBlock("x", lambda a, b: a * b)
+DivBlock = lambda: BOpBlock("/", lambda a, b: a / b)
+ModBlock = lambda: BOpBlock("%", lambda a, b: float(int(a) % int(b)))
+EqBlock = lambda: BOpBlock("=", lambda a, b: math.isclose(a, b) if isinstance(a, float) and isinstance(b, float) else a == b)
+NEqBlock = lambda: BOpBlock("!=", lambda a, b: (not math.isclose(a, b)) if isinstance(a, float) and isinstance(b, float) else a != b)
+GrBlock = lambda: BOpBlock(">", lambda a, b: a > b)
+LsBlock = lambda: BOpBlock("<", lambda a, b: a < b)
 
-# had to implement this separately since it's unary
-class NotBlock(SlotBlock):
+# unary operators
+class UOpBlock(SlotBlock):
     default_valid_parent = False
-    def __init__(self, slots = {}):
-        super().__init__("!", (155, 89, 182), 1, slots, [])
+    def __init__(self, label, oper):
+        super().__init__(label, (155, 89, 182), 1, {}, [])
+        self.oper = oper
 
     def execute(self):
-        if 0 in self.slots:
-            val = self.slots[0].execute()
-            if isinstance(val, bool): return not val
+        try:
+            return self.oper(self.slots[0].execute())
+        except: pass
 
+NotBlock = lambda: UOpBlock("!", lambda a: not a)
+RndBlock = lambda: UOpBlock("round", lambda a: float(int(a + 0.5)))
+FlrBlock = lambda: UOpBlock("floor", lambda a: float(int(a)))
+CelBlock = lambda: UOpBlock("ceil", lambda a: float(int(a + 1)))
+
+# these operators also set the variable
+class IncBlock(SlotBlock):
+    default_valid_parent = False
+    def __init__(self, slots = {}):
+        super().__init__("++", (142, 68, 173), 1, slots, [])
+
+    def execute(self):
+        try:
+            global_vars[self.slots[0].field] += 1
+            return global_vars[self.slots[0].field]
+        except: pass
+
+class DecBlock(SlotBlock):
+    default_valid_parent = False
+    def __init__(self, slots = {}):
+        super().__init__("--", (142, 68, 173), 1, slots, [])
+
+    def execute(self):
+        try:
+            global_vars[self.slots[0].field] -= 1
+            return global_vars[self.slots[0].field]
+        except: pass

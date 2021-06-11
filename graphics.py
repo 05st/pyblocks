@@ -20,7 +20,7 @@ def create_dialog(lines, size = (600, 600)):
         surface.blit(text, (5, 5 + i * 25))
     display.blit(surface, pos)
 
-# i prefer using lambda when the function would only be 2 lines
+# i prefer using lambda when the function would only be 1 line
 display_problem = lambda problem_text: create_dialog(utility.wrap_text(problem_text), (600, 100))
     
 tutorial_text = """
@@ -124,7 +124,7 @@ def render(tasks):
         # TODO: move handling from below up here
         width = text_surf.get_rect().width + 10
         if isinstance(block, blocks.SlotBlock): # account for slots
-            width += block.slots_count * block.size[1] + 5 * (block.slots_count - 1)
+            width += block.slots_count * block.size[1] + 8 * (block.slots_count - 1)
             for item in block.slots.values():
                 width -= block.size[1]
                 width += item.size[0]
@@ -134,25 +134,56 @@ def render(tasks):
         block.size = (width, block.size[1])
 
         # create main surface
-        block_surf = pygame.Surface(block.size)
-        block_surf.fill(block.color)
+        block_surf = pygame.Surface((block.size[0] + 4, block.size[1] + 4))
+        block_surf.fill((52, 73, 94))#(149, 165, 166))#(44, 62, 80)) # border
+        color_surf = pygame.Surface(block.size)
+        color_surf.fill(block.color)
+        block_surf.blit(color_surf, (2, 2))
         block_surf.set_alpha(block.opacity)
+
+        text_x = 7
 
         # handle SlotBlocks
         if isinstance(block, blocks.SlotBlock):
-            cur_width = text_surf.get_rect().width + 10
-            for i in range(block.slots_count):
-                slot_surf = pygame.Surface((block.size[1],)*2)
-                slot_surf.fill((236, 240, 241))#(255, 255, 255))
-                slot_pos = (cur_width + i * 5, 0)
-                block_surf.blit(slot_surf, slot_pos)
-                block.slots_pos[i] = (block.pos[0] + slot_pos[0], block.pos[1] + slot_pos[1])
-                if i in block.slots:
-                    block.slots[i].pos = block.slots_pos[i]
-                    tasks.append(block.slots[i])
-                    cur_width += block.slots[i].size[0]
-                else:
-                    cur_width += block.size[1]
+            # handle binary operator blocks separately for readability
+            if isinstance(block, blocks.BOpBlock):
+                slot_a = pygame.Surface((block.size[1],)*2)
+                slot_a.fill((236, 240, 241))
+                slot_b = pygame.Surface((block.size[1],)*2)
+                slot_b.fill((236, 240, 241))
+                slot_pos_a = 2
+                cur_width = block.size[1]
+                if 0 in block.slots:
+                    slot_pos_a = 0
+                    cur_width = block.slots[0].size[0]
+                    block.slots[0].pos = (block.pos[0] + slot_pos_a, block.pos[1] + slot_pos_a)
+                    tasks.append(block.slots[0])
+                block.slots_pos[0] = (block.pos[0] + slot_pos_a, block.pos[1] + slot_pos_a)
+                block_surf.blit(slot_a, (slot_pos_a,)*2)
+                slot_pos_b = (block.size[0] - block.size[1] + 2, 2)
+                text_x = cur_width + 10
+                if 1 in block.slots:
+                    slot_pos_b = (block.size[0] - block.slots[1].size[0], 0)
+                    block.slots[1].pos = (block.pos[0] + slot_pos_b[0], block.pos[1] + slot_pos_b[1])
+                    tasks.append(block.slots[1])
+                block.slots_pos[1] = (block.pos[0] + slot_pos_b[0], block.pos[1] + slot_pos_b[1])
+                block_surf.blit(slot_b, slot_pos_b)
+            else:
+                cur_width = text_surf.get_rect().width + 10
+                for i in range(block.slots_count):
+                    slot_surf = pygame.Surface((block.size[1],)*2)
+                    slot_surf.fill((236, 240, 241))#(255, 255, 255))
+                    slot_pos = (cur_width + i * 8 + 2, 2)
+                    if i in block.slots:
+                        slot_pos = (slot_pos[0] - 2, slot_pos[1] - 2)
+                    block_surf.blit(slot_surf, slot_pos)
+                    block.slots_pos[i] = (block.pos[0] + slot_pos[0], block.pos[1] + slot_pos[1])
+                    if i in block.slots:
+                        block.slots[i].pos = block.slots_pos[i]
+                        tasks.append(block.slots[i])
+                        cur_width += block.slots[i].size[0] + 2
+                    else:
+                        cur_width += block.size[1]
 
         # handle FieldBlocks
         elif isinstance(block, blocks.FieldBlock):
@@ -161,15 +192,15 @@ def render(tasks):
             field_surf = pygame.Surface(field_size)
             field_surf.fill((236, 240, 241))#(255, 255, 255))
             field_surf.blit(field_text_surf, (5, block.size[1] // 2 - field_text_surf.get_rect().height // 2))
-            block.field_ps = ((text_surf.get_rect().width + 10 + block.pos[0], block.pos[1]), field_size)
-            block_surf.blit(field_surf, (text_surf.get_rect().width + 10, 0))
+            block.field_ps = ((text_surf.get_rect().width + 10 + 2 + block.pos[0], block.pos[1] + 2), field_size)
+            block_surf.blit(field_surf, (text_surf.get_rect().width + 10 + 2, 2))
 
         # blit surfaces
-        block_surf.blit(text_surf, (5, block.size[1] // 2 - text_surf.get_rect().height // 2))
+        block_surf.blit(text_surf, (text_x, block.size[1] // 2 - text_surf.get_rect().height // 2 + 2))
         display.blit(block_surf, block.pos)
 
         # handle children
-        cur_height = block.size[1]
+        cur_height = block.size[1] + 4
         for i, child in enumerate(block.children):
             child.pos = (block.pos[0] + 20, block.pos[1] + cur_height) # indent size is 20px
             cur_height += child.abs_height()

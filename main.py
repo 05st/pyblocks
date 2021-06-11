@@ -132,10 +132,12 @@ insert_options = [
     "NumBlock", "TextBlock", "TrueBlock", "FalseBlock",
     "PrintBlock", "RetBlock",
     "AddBlock", "SubBlock", "MulBlock", "DivBlock", "ModBlock",
-    "EqBlock", "NEqBlock", "NotBlock", "GrBlock", "LsBlock",
+    "EqBlock", "NEqBlock", "GrBlock", "LsBlock",
+    "NotBlock", "RndBlock", "FlrBlock", "CelBlock",
+    "IncBlock", "DecBlock",
     "VarBlock", "SetBlock",
-    # "FuncBlock", "CallBlock",
-    "IfBlock", "WhileBlock"
+    "FuncBlock", "CallBlock",
+    "IfBlock", "WhileBlock", "ForBlock",
 ]
 temp_instances = [getattr(blocks, block_class)() for block_class in insert_options]
 insert_buttons = [(block.label, block.color) for block in temp_instances]
