@@ -1,5 +1,6 @@
 # shared.py contains data that should be shared among modules and helpful functions
 
+# dictionary for levels, contains the text and expected value for goal variable
 LEVEL_DATA = {
     1: ("Set 'goal' to the result of 5 + 5 * 5", 30),
     2: ("Set 'goal' to be the smallest prime factor of 12345678", 2),
@@ -13,6 +14,7 @@ LEVEL_DATA = {
     10: ("Congratulations! You've completed all of the levels.", None),
 }
 
+# blocks that will appear on the insert menu
 INSERT_OPTIONS = [
     "StartBlock",
     "NumBlock", "TextBlock", "TrueBlock", "FalseBlock",

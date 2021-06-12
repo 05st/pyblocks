@@ -1,8 +1,10 @@
 # blocks.py contains block class definitions, and does the code interpretation
 
+# LIBRARY IMPORTS #
 import copy
 import math
 
+# LOCAL MODULES #
 import shared
 
 # i don't like how i placed these variables here, ideally i want them to be in the Game class. not too big of a deal
@@ -39,6 +41,7 @@ class BaseBlock:
     def execute(self):
         pass # to be overridden by inheriting classes
 
+
 # SlotBlock class implements slot functionality into BaseBlcok
 class SlotBlock(BaseBlock):
     def __init__(self, label, color, slots_count, slots = {}, children = []):
@@ -56,6 +59,7 @@ class SlotBlock(BaseBlock):
                 self.slots[i] = ghost
                 return True
         return False
+
 
 # FieldBlocks contain a text field for input
 class FieldBlock(BaseBlock):
@@ -90,6 +94,7 @@ class NumBlock(FieldBlock):
     def execute(self):
         return float(self.field)
 
+
 # blocks for boolean values
 class TrueBlock(BaseBlock):
     default_valid_parent = False
@@ -107,6 +112,7 @@ class FalseBlock(BaseBlock):
     def execute(self):
         return False
 
+
 # StartBlocks in global_blocks get executed, entry point block
 class StartBlock(BaseBlock):
     default_valid_child = False
@@ -117,6 +123,7 @@ class StartBlock(BaseBlock):
         for child in self.children:
             child.execute()
 
+
 # PrintBlocks just print the result of the first slot
 class PrintBlock(SlotBlock):
     default_valid_parent = False
@@ -126,6 +133,16 @@ class PrintBlock(SlotBlock):
     def execute(self):
         if 0 in self.slots:
             print(self.slots[0].execute())
+
+# used inside function blocks
+class RetBlock(SlotBlock):
+    def __init__(self, slots = {}):
+        super().__init__("Return", (52, 73, 94), 1, slots, [])
+
+    def execute(self):
+        if 0 in self.slots:
+            return self.slots[0].execute()
+
 
 class FuncBlock(FieldBlock):
     default_valid_parent = True
@@ -163,13 +180,6 @@ class CallBlock(FieldBlock):
         if self.field in global_fns:
             return global_fns[self.field].execute()
 
-class RetBlock(SlotBlock):
-    def __init__(self, slots = {}):
-        super().__init__("Return", (52, 73, 94), 1, slots, [])
-
-    def execute(self):
-        if 0 in self.slots:
-            return self.slots[0].execute()
 
 class IfBlock(SlotBlock):
     def __init__(self, slots = {}, children = []):
@@ -203,6 +213,7 @@ class ForBlock(SlotBlock):
                 self.slots[2].execute()
         except: pass
 
+
 class VarBlock(FieldBlock):
     def __init__(self, field="a"):
         super().__init__("Var", (192, 57, 43), field, [])
@@ -224,6 +235,7 @@ class SetBlock(SlotBlock):
         if 0 in self.slots and 1 in self.slots:
             if isinstance(self.slots[0], VarBlock):
                 global_vars[self.slots[0].field] = self.slots[1].execute()
+
 
 # binary operator class for more code reusability
 class BOpBlock(SlotBlock):
