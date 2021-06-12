@@ -1,7 +1,7 @@
 import pygame
 
 import blocks
-import utility
+import shared
 
 display = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("PyBlocks")
@@ -21,8 +21,9 @@ def create_dialog(lines, size = (600, 600)):
     display.blit(surface, pos)
 
 # i prefer using lambda when the function would only be 1 line
-display_problem = lambda problem_text: create_dialog(utility.wrap_text(problem_text), (600, 100))
-    
+display_problem = lambda problem_text: create_dialog(shared.wrap_text(problem_text), (600, 100))
+
+# the wrap_text function adds newlines on [BREAK]
 tutorial_text = """
     PyBlocks is a game where the objective is to solve certain problems with interactive code. [BREAK]
     To view the current problem, press TAB. Solutions are verified by checking if value stored inside the 'goal' variable is correct.
@@ -44,7 +45,7 @@ tutorial_text = """
     [BREAK]
     Press SPACE to begin inserting blocks!
 """
-display_tutorial = lambda: create_dialog(utility.wrap_text(tutorial_text), (600, 648))
+display_tutorial = lambda: create_dialog(shared.wrap_text(tutorial_text), (600, 648))
 
 controls_elems = [
     "LMB: Move/Place/Interact", "RMB: Delete",
@@ -60,6 +61,11 @@ controls_elems = [
     "RIGHT ARROW: Next Level",
 ]
 display_controls = lambda: create_dialog(controls_elems)
+
+def display_level(level):
+    text = font.render(f"LEVEL: {level}", True, (255, 255, 255))
+    ww = pygame.display.get_surface().get_size()[0]
+    display.blit(text, (ww // 2 - text.get_rect().width // 2, 5))
 
 def display_vars(global_vars):
     count = 0
@@ -113,7 +119,6 @@ def finish():
 
 # to be called once per frame
 def render(tasks):
-
     while tasks: # while tasks is not empty
         block = tasks.pop()
 
@@ -206,5 +211,4 @@ def render(tasks):
             cur_height += child.abs_height()
         
         tasks += block.children[:]
-
 

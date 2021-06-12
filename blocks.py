@@ -1,8 +1,11 @@
+# blocks.py contains block class definitions, and does the code interpretation
+
 import copy
 import math
 
-import utility
+import shared
 
+# i don't like how i placed these variables here, ideally i want them to be in the Game class. not too big of a deal
 # dictionary for variables
 global_vars = {}
 # functions
@@ -47,7 +50,7 @@ class SlotBlock(BaseBlock):
     def fill_slot(self, ghost, pos): # rewrite in future if possible
         if not ghost.valid_child: return False
         for i, spos in self.slots_pos.items():
-            if i not in self.slots and utility.check_collision(spos, (self.size[1],) * 2, pos):
+            if i not in self.slots and shared.check_collision(spos, (self.size[1],) * 2, pos):
                 ghost.children = []
                 ghost.valid_parent = False
                 self.slots[i] = ghost
@@ -283,3 +286,4 @@ class DecBlock(SlotBlock):
             global_vars[self.slots[0].field] -= 1
             return global_vars[self.slots[0].field]
         except: pass
+
