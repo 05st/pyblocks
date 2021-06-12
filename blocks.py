@@ -39,6 +39,9 @@ class BaseBlock:
             height += child.abs_height()
         return height
 
+    def cleanup(self):
+        pass # to be overridden (i didn't end up using this method for anything other than funcblocks)
+
     def execute(self):
         pass # to be overridden by inheriting classes
 
@@ -150,20 +153,25 @@ class FuncBlock(FieldBlock):
     default_valid_child = False
     def __init__(self, field = "func", children = []):
         super().__init__("Function", (230, 126, 34), field, children)
-        global_fns[field] = children[:]
         self.prev_field = field
+        global_fns[self.field] = self
 
     def validate(self):
         if not self.field:
             self.field = "func"
         global_fns[self.prev_field] = None
-        global_fns[self.field] = self.children[:]
+        global_fns[self.field] = self
         self.prev_field = self.field
 
-    def add_child(self, child):
-        if self.valid_parent and child.valid_child:
-            self.children.append(child)
-            global_fns[self.field] = self.children[:]
+    def cleanup(self):
+        if global_fns[self.field] == self:
+            global_fns[self.field] = None
+
+    def execute(self):
+        for child in self.children:
+            val = child.execute()
+            if isinstance(child, RetBlock):
+                return val
 
 # block that is used to call functions
 class CallBlock(FieldBlock):
@@ -175,10 +183,8 @@ class CallBlock(FieldBlock):
             self.field = "func"
 
     def execute(self):
-        if self.field in global_fns:
-            for c in global_fns[self.field]:
-                r = c.execute()
-                if isinstance(r, RetBlock): return r
+        if self.field in global_fns and global_fns[self.field] != None:
+            return global_fns[self.field].execute()
 
 # control flow blocks
 class IfBlock(SlotBlock):
@@ -259,6 +265,8 @@ EqBlock = lambda: BOpBlock("=", lambda a, b: math.isclose(a, b) if isinstance(a,
 NEqBlock = lambda: BOpBlock("!=", lambda a, b: (not math.isclose(a, b)) if isinstance(a, float) and isinstance(b, float) else a != b)
 GrBlock = lambda: BOpBlock(">", lambda a, b: a > b)
 LsBlock = lambda: BOpBlock("<", lambda a, b: a < b)
+AndBlock = lambda: BOpBlock("&&", lambda a, b: a and b)
+OrBlock = lambda: BOpBlock("||", lambda a, b: a or b)
 
 # unary operators
 class UOpBlock(SlotBlock):

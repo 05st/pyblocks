@@ -47,10 +47,10 @@ def insert_menu_detection(pos):
             toggleables["d_menu"] = False
             GAME_INSTANCE.begin_place(shared.INSERT_OPTIONS[i])
 
-# GAME LOOP #
+# handle pygame events
 closed = False
-while not closed:
-    # handle pygame events
+def handle_events():
+    global closed
     for event in pygame.event.get(): # catch any events
         if event.type == pygame.QUIT:
             closed = True # breaks out of the main loop
@@ -61,19 +61,26 @@ while not closed:
                 input_map[event.key][0](*input_map[event.key][1]) # calls the function associated with the key code
         elif event.type == pygame.MOUSEBUTTONDOWN and not GAME_INSTANCE.typing: # any mouse inputs should be ignored if typing
             pos = pygame.mouse.get_pos()
+
             if event.button == 1: # LMB
                 if toggleables["d_menu"]: # if insert menu is open, check if any buttons were clicked
                     insert_menu_detection(pos)
                 else:
                     target = GAME_INSTANCE.identify_block(pos)
+
                     if pygame.key.get_pressed()[pygame.K_LSHIFT] : # cloning block feature, if lshift is held
                         GAME_INSTANCE.clone(target)
                     else:
                         GAME_INSTANCE.begin_typing(target, pos) # will try to begin typing
+
                         if not GAME_INSTANCE.typing: # if not interacting with a FieldBlock
                             (GAME_INSTANCE.end_place if GAME_INSTANCE.placing else GAME_INSTANCE.begin_move)(target, pos)
             elif event.button == 3 and not toggleables["d_menu"]: # RMB
                 GAME_INSTANCE.delete_block(pos)
+
+# GAME LOOP #
+while not closed:
+    handle_events()
 
     tasks = GAME_INSTANCE.global_blocks[:] # clone list of root blocks for initial rendering tasks
 

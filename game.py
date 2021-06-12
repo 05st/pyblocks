@@ -79,6 +79,7 @@ class Game:
                 if self.delete_slotblock(pos, slot.slots):
                     return True
             if shared.check_collision(slot.pos, slot.size, pos):
+                slots[i].cleanup()
                 del slots[i]
                 return True
         return False
@@ -93,6 +94,7 @@ class Game:
             if self.delete_block(pos, block.children):
                 return True
             if shared.check_collision(block.pos, block.size, pos):
+                blocks[i].cleanup()
                 del blocks[i]
                 return True
         return False
@@ -117,7 +119,7 @@ class Game:
 
     # clones target block and begins placing
     def clone(self, target):
-        if target != None and not placing:
+        if target != None and not self.placing:
             self.ghost = copy.deepcopy(target)
             self.ghost.opacity = 128
             self.placing = True
@@ -125,7 +127,6 @@ class Game:
     # (re)starts the game, execute all start block_defs. at the end, check if the problem was completed
     def run(self):
         block_defs.global_vars = {}
-        block_defs.global_fns = {}
 
         for root in self.global_blocks:
             if isinstance(root, block_defs.StartBlock):

@@ -21,11 +21,11 @@ INSERT_OPTIONS = [
     "NumBlock", "TextBlock", "TrueBlock", "FalseBlock",
     "PrintBlock", "RetBlock",
     "AddBlock", "SubBlock", "MulBlock", "DivBlock", "ModBlock",
-    "EqBlock", "NEqBlock", "GrBlock", "LsBlock",
+    "EqBlock", "NEqBlock", "GrBlock", "LsBlock", "AndBlock", "OrBlock",
     "NotBlock", "RndBlock", "FlrBlock", "CelBlock",
     "IncBlock", "DecBlock",
     "VarBlock", "SetBlock",
-    # "FuncBlock", "CallBlock",
+    "FuncBlock", "CallBlock",
     "IfBlock", "WhileBlock", "ForBlock",
 ]
 

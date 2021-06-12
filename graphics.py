@@ -11,7 +11,7 @@ import shared
 # create main display surface, set title
 display = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("PyBlocks")
-# initialize font i use throughout the game
+# initialize font used throughout the game
 pygame.font.init()
 font = pygame.font.SysFont(pygame.font.get_default_font(), 25)
 
@@ -58,7 +58,7 @@ tutorial_text = """
     [BREAK]
     Press SPACE to begin inserting blocks!
 """
-display_tutorial = lambda: create_dialog(shared.wrap_text(tutorial_text), (600, 648))
+display_tutorial = lambda: create_dialog(shared.wrap_text(tutorial_text), (600, 653))
 
 controls_elems = [
     "LMB: Move/Place/Interact", "RMB: Delete",
@@ -68,7 +68,7 @@ controls_elems = [
     "C: Show Controls",
     "T: Show Tutorial",
     "SPACE: Insert Menu",
-    "ENTER: Run Code",
+    "ENTER: Run Code/Stop Typing",
     "TAB: View Problem",
     "LEFT ARROW: Previous Level",
     "RIGHT ARROW: Next Level",
@@ -141,7 +141,6 @@ def render(tasks):
         text_surf = font.render(block.label, True, (255, 255, 255))
 
         # calculate width
-        # TODO: move handling from below up here
         width = text_surf.get_rect().width + 10
         if isinstance(block, blocks.SlotBlock): # account for slots
             width += block.slots_count * bh + 8 * (block.slots_count - 1)
