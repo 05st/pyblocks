@@ -1,13 +1,21 @@
+# graphics.py is responsible for rendering everything, deals with pygame
+# isolating my game's interaction with pygame into one module helped development a lot
+
+# LIBRARY IMPORTS #
 import pygame
 
+# LOCAL MODULES #
 import blocks
 import shared
 
+# create main display surface, set title
 display = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("PyBlocks")
+# initialize font i use throughout the game
 pygame.font.init()
 font = pygame.font.SysFont(pygame.font.get_default_font(), 25)
 
+# adjustable variables for UI
 INDENT = 20
 BORDER = 2
 PADDING = 5
@@ -186,6 +194,7 @@ def render(tasks):
                 block.slots_pos[1] = (bx + offset_b[0], by + offset_b[1])
                 block_surf.blit(slot_b, offset_b)
             else:
+                # use a for loop to generate the arbitrary # of slots, similar to code above
                 cur_width = text_surf.get_rect().width + PADDING * 2
                 for i in range(block.slots_count):
                     slot_surf = pygame.Surface(def_slot_size)

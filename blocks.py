@@ -1,4 +1,5 @@
-# blocks.py contains block class definitions, and does the code interpretation
+# blocks.py contains block class definitions
+# since interpretation wasn't that complex, i put the interpreter code inside the classes themselves (execute() method)
 
 # LIBRARY IMPORTS #
 import copy
@@ -7,7 +8,7 @@ import math
 # LOCAL MODULES #
 import shared
 
-# i don't like how i placed these variables here, ideally i want them to be in the Game class. not too big of a deal
+# due to this class also being the interpreter, it was the best place to put these variables
 # dictionary for variables
 global_vars = {}
 # functions
@@ -15,8 +16,8 @@ global_fns = {}
 
 # BaseBlock is the root class, has children functionality
 class BaseBlock:
-    default_valid_parent = True
-    default_valid_child = True
+    default_valid_parent = True # determines if block can contain children
+    default_valid_child = True # determines if block can be added as child or into slot
     def __init__(self, label, color, children = []):
         self.label = label
         self.color = color
@@ -50,7 +51,7 @@ class SlotBlock(BaseBlock):
         self.slots = copy.deepcopy(slots)
         self.slots_pos = {}
 
-    def fill_slot(self, ghost, pos): # rewrite in future if possible
+    def fill_slot(self, ghost, pos): # fill in the slot that was clicked on, if any. return true if success
         if not ghost.valid_child: return False
         for i, spos in self.slots_pos.items():
             if i not in self.slots and shared.check_collision(spos, (self.size[1],) * 2, pos):
@@ -75,8 +76,7 @@ class FieldBlock(BaseBlock):
     def execute(self): # simply return the text
         return self.field
 
-# just a child class, no different functionality. 
-# to make it easier for me
+# just a more specific class, no different functionality. 
 class TextBlock(FieldBlock):
     def __init__(self, field="text"):
         super().__init__("Text", (52, 152, 219), field, [])
@@ -113,7 +113,7 @@ class FalseBlock(BaseBlock):
         return False
 
 
-# StartBlocks in global_blocks get executed, entry point block
+# StartBlocks in global_blocks get executed first, entry point block
 class StartBlock(BaseBlock):
     default_valid_child = False
     def __init__(self, children = []):
@@ -144,30 +144,28 @@ class RetBlock(SlotBlock):
             return self.slots[0].execute()
 
 
+# really basic function implementation, no paramters support (although you can use variables to emulate)
 class FuncBlock(FieldBlock):
     default_valid_parent = True
     default_valid_child = False
     def __init__(self, field = "func", children = []):
         super().__init__("Function", (230, 126, 34), field, children)
-        global_fns[field] = self
+        global_fns[field] = children[:]
         self.prev_field = field
-
-    def __del__(self):
-        if self.field in global_fns:
-            global_fns.pop(self.field)
 
     def validate(self):
         if not self.field:
             self.field = "func"
-        global_fns.pop(self.prev_field)
-        global_fns[self.field] = self
+        global_fns[self.prev_field] = None
+        global_fns[self.field] = self.children[:]
         self.prev_field = self.field
 
-    def execute(self):
-        for child in self.children:
-            r = child.execute()
-            if isinstance(child, RetBlock): return r
+    def add_child(self, child):
+        if self.valid_parent and child.valid_child:
+            self.children.append(child)
+            global_fns[self.field] = self.children[:]
 
+# block that is used to call functions
 class CallBlock(FieldBlock):
     def __init__(self, field = "func"):
         super().__init__("Call", (211, 84, 0), field, [])
@@ -178,9 +176,11 @@ class CallBlock(FieldBlock):
 
     def execute(self):
         if self.field in global_fns:
-            return global_fns[self.field].execute()
+            for c in global_fns[self.field]:
+                r = c.execute()
+                if isinstance(r, RetBlock): return r
 
-
+# control flow blocks
 class IfBlock(SlotBlock):
     def __init__(self, slots = {}, children = []):
         super().__init__("If", (241, 196, 15), 1, slots, children)
@@ -213,7 +213,7 @@ class ForBlock(SlotBlock):
                 self.slots[2].execute()
         except: pass
 
-
+# variable block
 class VarBlock(FieldBlock):
     def __init__(self, field="a"):
         super().__init__("Var", (192, 57, 43), field, [])
@@ -226,6 +226,7 @@ class VarBlock(FieldBlock):
         if self.field in global_vars:
             return global_vars[self.field]
 
+# SetBlocks are used to assign and define variables
 class SetBlock(SlotBlock):
     default_valid_parent = False
     def __init__(self, slots = {}):

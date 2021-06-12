@@ -7,6 +7,7 @@ import graphics
 import shared
 import blocks
 
+# instance of the game class, class is used for organization
 GAME_INSTANCE = game.Game()
 
 # UI VARIABLES AND FUNCTIONS #
@@ -26,6 +27,7 @@ temp_instances = [getattr(blocks, block_class)() for block_class in shared.INSER
 insert_buttons = [(block.label, block.color) for block in temp_instances]
 insert_menu_ps = [] # contains position and size of insert menu buttons for click detection
 
+# INPUT MAP #
 # using a dictionary allows me to not use a thousand elif statements
 input_map = {
     pygame.K_x: (GAME_INSTANCE.clear, []),
@@ -40,7 +42,6 @@ input_map = {
 }
 
 def insert_menu_detection(pos):
-    global insert_menu_ps
     for i, btn_ps in enumerate(insert_menu_ps):
         if shared.check_collision(btn_ps[0], btn_ps[1], pos):
             toggleables["d_menu"] = False
@@ -49,12 +50,13 @@ def insert_menu_detection(pos):
 # GAME LOOP #
 closed = False
 while not closed:
+    # handle pygame events
     for event in pygame.event.get(): # catch any events
         if event.type == pygame.QUIT:
-            closed = True
+            closed = True # breaks out of the main loop
         elif event.type == pygame.KEYDOWN:
             if GAME_INSTANCE.typing:
-                GAME_INSTANCE.handle_typing(event)
+                GAME_INSTANCE.handle_typing(event) # adds the unicode character to the currently editing fieldblock
             elif event.key in input_map:
                 input_map[event.key][0](*input_map[event.key][1]) # calls the function associated with the key code
         elif event.type == pygame.MOUSEBUTTONDOWN and not GAME_INSTANCE.typing: # any mouse inputs should be ignored if typing
@@ -64,7 +66,7 @@ while not closed:
                     insert_menu_detection(pos)
                 else:
                     target = GAME_INSTANCE.identify_block(pos)
-                    if pygame.key.get_pressed()[pygame.K_LSHIFT] : # cloning block feature
+                    if pygame.key.get_pressed()[pygame.K_LSHIFT] : # cloning block feature, if lshift is held
                         GAME_INSTANCE.clone(target)
                     else:
                         GAME_INSTANCE.begin_typing(target, pos) # will try to begin typing
@@ -73,7 +75,7 @@ while not closed:
             elif event.button == 3 and not toggleables["d_menu"]: # RMB
                 GAME_INSTANCE.delete_block(pos)
 
-    tasks = GAME_INSTANCE.global_blocks[:]
+    tasks = GAME_INSTANCE.global_blocks[:] # clone list of root blocks for initial rendering tasks
 
     # update ghost
     if GAME_INSTANCE.placing:
@@ -87,11 +89,11 @@ while not closed:
     graphics.render(tasks) # renders block_defs
     graphics.display_level(GAME_INSTANCE.level) # displays level
     # render toggleables
-    if toggleables["d_vars"]: graphics.display_vars(blocks.global_vars)
-    if toggleables["d_prob"]: graphics.display_problem(shared.LEVEL_DATA[GAME_INSTANCE.level][0])
-    if toggleables["d_menu"]: insert_menu_ps = graphics.display_insert_menu(insert_buttons)
-    if toggleables["d_cont"]: graphics.display_controls()
-    if toggleables["d_tutr"]: graphics.display_tutorial()
+    if toggleables["d_vars"]: graphics.display_vars(blocks.global_vars) # variable display
+    if toggleables["d_prob"]: graphics.display_problem(shared.LEVEL_DATA[GAME_INSTANCE.level][0]) # problem statement dialog
+    if toggleables["d_menu"]: insert_menu_ps = graphics.display_insert_menu(insert_buttons) # insert menu
+    if toggleables["d_cont"]: graphics.display_controls() # controls dialog
+    if toggleables["d_tutr"]: graphics.display_tutorial() # tutorial dialog
     graphics.finish() # update display
 
 pygame.quit() # properly clean up
